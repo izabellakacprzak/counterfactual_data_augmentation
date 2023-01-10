@@ -1,7 +1,7 @@
 import numpy as np
 import torch.nn as nn
 
-from evaluation.evaluate import pretty_print_evaluation
+from utils.evaluate import pretty_print_evaluation
 from params import *
 
 class ConvNet(torch.nn.Module):
@@ -108,7 +108,7 @@ class ConvNet(torch.nn.Module):
                 # precision += precision_score(y_true, y_pred, average=None, labels=labels)
         test_loss /= len(self.test_loader.dataset)
         # test_losses.append(test_loss)
+        accuracy = 100. * correct / len(self.test_loader.dataset)
         print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(self.test_loader.dataset),
-            100. * correct / len(self.test_loader.dataset)))
-        pretty_print_evaluation(np.asarray(y_pred), np.asarray(y_true), self.labels)
+            test_loss, correct, len(self.test_loader.dataset), accuracy))
+        return np.asarray(y_pred), np.asarray(y_true), accuracy
