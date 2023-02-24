@@ -3,7 +3,6 @@ from torchvision import transforms
 from matplotlib import pyplot as plt
 import numpy as np
 from scipy import stats
-from scipy.interpolate import CubicSpline
 from datasets.perturbedMNIST import PerturbedMNIST
 
 from params import *
@@ -23,69 +22,29 @@ transforms_list = transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize((0.1307), (0.3081))])
 
+def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_method=AugmentationMethod.NONE):
+    runs_arr.append(run_name)
+    print(run_name)
+    train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
+    print_classes_size(train_dataset)
+    test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc)
+
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+
+    accuracy = []
+    train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accuracy)
+    accs_arr.append(accuracy)
+
+############################################################
+# Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
+# balanced, imbalanced, balanced with oversampling, balanced with standard data augmentations methods
+
 # plot_dataset_digits(train_dataset)
-
-# runs_arr.append("BALANCED_PERTURBED_MNIST")
-# print("Training on balanced mnist")
-# train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=1.)
-
-# test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.)
-
-# print_classes_size(train_dataset)
-
-# train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-# test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
-
-# accuracy = []
-# train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accuracy)
-# accs_arr.append(accuracy)
-
-# ############################################################
-
-# runs_arr.append("IMBALANCED_PERTURBED_MNIST")
-# print("Training on imbalanced mnist")
-
-# train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=.02)
-# test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=.02)
-
-# print_classes_size(train_dataset)
-
-# train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-# test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
-
-# accuracy = []
-# train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accuracy)
-# accs_arr.append(accuracy)
-
-############################################################
-
-# runs_arr.append("OVERSAMPLING_PERTURBED_MNIST")
-# print("Training on oversampled mnist")
-# train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=.02, method=AugmentationMethod.OVERSAMPLING)
-# print_classes_size(train_dataset)
-# test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=.02)
-
-# train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-# test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
-
-# accuracy = []
-# train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accuracy)
-# accs_arr.append(accuracy)
-
-############################################################
-
-runs_arr.append("AUGMENTING_PERTURBED_MNIST")
-print("Training on augmented mnist")
-train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=.02, method=AugmentationMethod.AUGMENTATIONS)
-print_classes_size(train_dataset)
-test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=.02)
-
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
-
-accuracy = []
-train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accuracy)
-accs_arr.append(accuracy)
+train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
+train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", 0.02)
+train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", 0.02, AugmentationMethod.OVERSAMPLING)
+train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", 0.02, AugmentationMethod.AUGMENTATIONS)
 
 ############################################################
 
