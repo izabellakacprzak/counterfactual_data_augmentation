@@ -28,8 +28,8 @@ pred_arr = []
 true_arr = []
 runs_arr = []
 accs_arr = []
-## balanced MNIST
-runs_arr.append("BALANCED MNIST")
+
+runs_arr.append("BALANCED_VANILLA_MNIST")
 print("Training on balanced mnist")
 train_dataset = VanillaMNIST(train=True, transform=transforms.Compose([
                     transforms.ToTensor(),
@@ -47,8 +47,9 @@ accuracy = []
 train_and_evaluate(train_loader, test_loader, 1, 10, pred_arr, true_arr, accuracy)
 accs_arr.append(accuracy)
 
-## imbalanced MNIST
-runs_arr.append("IMBALANCED MNIST")
+############################################################
+
+runs_arr.append("IMBALANCED_VANILLA_MNIST")
 print("Training on imbalanced mnist")
 train_dataset = VanillaMNIST(train=True, transform=transforms.Compose([
                     transforms.ToTensor(),
@@ -67,8 +68,9 @@ accuracy = []
 train_and_evaluate(train_loader, test_loader, 1, 10, pred_arr, true_arr, accuracy)
 accs_arr.append(accuracy)
 
-## balanced with oversampling MNIST
-runs_arr.append("OVERSAMPLING MNIST")
+############################################################
+
+runs_arr.append("OVERSAMPLING_VANILLA_MNIST")
 print("Training on oversampled mnist")
 train_dataset = VanillaMNIST(train=True, transform=transforms.Compose([
                     transforms.ToTensor(),
@@ -87,8 +89,9 @@ accuracy = []
 train_and_evaluate(train_loader, test_loader, 1, 10, pred_arr, true_arr, accuracy)
 accs_arr.append(accuracy)
 
-## balanced with perturbations loss function MNIST
-runs_arr.append("PERTURBATIONS MNIST")
+############################################################
+
+runs_arr.append("PERTURBATIONS_VANILLA_MNIST")
 print("Training on perturbed mnist")
 train_dataset = VanillaMNIST(train=True, transform=transforms.Compose([
                     transforms.ToTensor(),
@@ -107,10 +110,13 @@ accuracy = []
 train_and_evaluate(train_loader, test_loader, 1, 10, pred_arr, true_arr, accuracy)
 accs_arr.append(accuracy)
 
+############################################################
+
 for idx in range(len(runs_arr)):
     print(runs_arr[idx])
-    plt.plot(accs_arr[idx], range(EPOCHS))
+    plt.scatter(list(range(EPOCHS)), accs_arr[idx])
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
-    plt.show()
+    plt.savefig("plots/"+runs_arr[idx]+".png")
+    # plt.show()
     pretty_print_evaluation(pred_arr[idx], true_arr[idx], [0,1,2,3,4,5,6,7,8,9])

@@ -2,3 +2,5 @@
 *.gz
 __pycache__
 files/
+data/
+plots/

@@ -1,4 +1,7 @@
 from sklearn import metrics
+import matplotlib.pyplot as plt
+
+from params import *
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -26,3 +29,30 @@ def get_confusion_matrix(y_pred, y_true):
 
 def get_classification_report(y_pred, y_true, labels):
     return metrics.classification_report(y_true, y_pred, digits=len(labels))
+
+def plot_dataset_digits(dataset):
+  fig = plt.figure(figsize=(13, 8))
+  columns = 6
+  rows = 3
+  # ax enables access to manipulate each of subplots
+  ax = []
+
+  for i in range(columns * rows):
+    img, label = dataset[i]
+    if img.shape[0] == 1:
+        img = img[0, :, :]
+    # create subplot and append to ax
+    ax.append(fig.add_subplot(rows, columns, i + 1))
+    ax[-1].set_title("Label: " + str(label))  # set title
+    plt.imshow(img)
+
+  plt.show()  # finally, render the plot
+
+def print_classes_size(dataset):
+    counts = {}
+    for _, y in dataset:
+        counts[y] = (counts[y] if y in counts else 0) + 1
+
+    for l in sorted(counts):
+        print(str(l)+": "+str(counts[l]))
+        print()
