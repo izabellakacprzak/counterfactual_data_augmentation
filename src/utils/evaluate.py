@@ -1,5 +1,6 @@
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import random
 
 from params import *
 
@@ -32,13 +33,14 @@ def get_classification_report(y_pred, y_true, labels):
 
 def plot_dataset_digits(dataset):
   fig = plt.figure(figsize=(13, 8))
-  columns = 6
-  rows = 3
+  columns = 10
+  rows = 5
   # ax enables access to manipulate each of subplots
   ax = []
 
   for i in range(columns * rows):
-    img, label = dataset[i]
+    idx = random.randint(0, len(dataset)-1)
+    img, label = dataset[idx]
     if img.shape[0] == 1:
         img = img[0, :, :]
     # create subplot and append to ax
