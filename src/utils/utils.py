@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import os
+import sys
 from PIL import Image
 import torch
 import torchvision
@@ -16,6 +17,7 @@ class AugmentationMethod(Enum):
     REWEIGHING = 3
     AUGMENTATIONS = 4
     PERTURBATIONS = 5
+    COUNTERFACTUALS = 6
 
 class Augmentation(Enum):
 #     ROTATION = 1
@@ -85,7 +87,16 @@ def apply_debiasing_method(method, img, label, new_tuples):
 def debias_mnist(train_data, method=AugmentationMethod.OVERSAMPLING):
     if method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt"):
         return torch.load("data/mnist_debiased_perturbed.pt")
-    oversample_multipliers = get_attr_label_multipliers(train_data)
+    
+    if method == AugmentationMethod.COUNTERFACTUALS:
+        if not os.path.exists(MORPHO_MNIST_COUNTERFACTUALS):
+            sys.exit("Error: file with counterfactuals does not exist!")
+
+        counterfactuals = torch.load(MORPHO_MNIST_COUNTERFACTUALS)
+        counterfactuals = train_data + counterfactuals
+        random.shuffle(train_data + counterfactuals)
+        return counterfactuals
+    # oversample_multipliers = get_attr_label_multipliers(train_data)
 
     new_tuples = []
     l = str(len(train_data))
@@ -190,13 +201,11 @@ def prepare_med_noisy_mnist(train_data, test_data, bias_conflicting_percentage):
     torch.save(test_set, test_file_name)
 
 def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accs):
-    model = ConvNet(train_loader=train_loader, test_loader=test_loader, in_channels=in_channels, out_channels=out_channels)
-    for epoch in range(1, EPOCHS):
-        _, _, acc = test_MNIST()
-        accs.append(acc)
-        train_MNIST(epoch)
+    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    train_MNIST(model, train_loader, test_loader, accs)
 
-    y_pred, y_true, acc = test_MNIST()
+    # final testing
+    y_pred, y_true, acc = test_MNIST(model, test_loader)
     accs.append(acc)
     pred_arr.append(y_pred)
     true_arr.append(y_true)
