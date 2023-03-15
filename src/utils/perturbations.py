@@ -2,6 +2,7 @@ import numpy as np
 import random
 import os
 import torch
+import csv
 
 import tqdm
 from params import *
@@ -42,6 +43,9 @@ def add_perturbations(images, targets, digits, perturbations=perturbations):
 def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0.05):
     train_file_name = "data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt"
     test_file_name = "data/test_perturbed.pt"
+    metrics_train_file_name = "data/train_perturbed_mnist_metrics.csv"
+    metrics_test_file_name = "data/est_perturbed_mnist_metrics.csv"
+
     if os.path.exists(train_file_name) and os.path.exists(test_file_name):
         print('Perturbed MNIST dataset already exists')
         return
@@ -50,6 +54,9 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
 
     train_set = []
     test_set = []
+    train_metrics = []
+    test_metrics = []
+
     l = len(train_data)
     if bias_conflicting_percentage == 0:
         perc = l
@@ -67,25 +74,31 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             if random.choice([0,1]) == 0:
                 perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
                 train_set.append((perturbed_image, label))
+                train_metrics.append([idx, 1.5])
             else:
                 perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
                 train_set.append((perturbed_image, label))
+                train_metrics.append([idx, 0.6])
 
         else: # bias-aligned samples
             count_bias += 1
             if label in THIN_CLASSES:
                 perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
                 train_set.append((perturbed_image, label))
+                train_metrics.append([idx, 1.5])
             elif label in THICK_CLASSES:
                 perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
                 train_set.append((perturbed_image, label))
+                train_metrics.append([idx, 0.6])
             else:
                 if random.choice([0,1]) == 0:
                     perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
                     train_set.append((perturbed_image, label))
+                    train_metrics.append([idx, 1.5])
                 else:
                     perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
                     train_set.append((perturbed_image, label))
+                    train_metrics.append([idx, 0.6])
 
     for idx, (im, label) in enumerate(test_data):
         if idx % 1000 == 0:
@@ -93,9 +106,24 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         if random.choice([0,1]) == 0:
             perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
             test_set.append((perturbed_image, label))
+            test_metrics.append([idx, 1.5])
         else:
             perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
             test_set.append((perturbed_image, label))
+            test_metrics.append([idx, 0.6])
 
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
+
+    col_names = ['index', 'thickness']
+    save_to_csv(metrics_train_file_name, col_names, train_metrics)
+    save_to_csv(metrics_test_file_name, col_names, test_metrics)
+
+
+def save_to_csv(file_name, col_names, rows):
+    with open(file_name, 'w') as f:   
+        # using csv.writer method from CSV package
+        write = csv.writer(f)
+        
+        write.writerow(col_names)
+        write.writerows(rows)

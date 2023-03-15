@@ -26,8 +26,8 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     runs_arr.append(run_name)
     print(run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
-    print_classes_size(train_dataset)
-    plot_dataset_digits(train_dataset)
+    # print_classes_size(train_dataset)
+    # plot_dataset_digits(train_dataset)
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc)
 
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
@@ -40,13 +40,14 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 ############################################################
 # Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
 # balanced, imbalanced, balanced with oversampling, balanced with standard data augmentations methods
+# and balanced with counterfactual images
 
 # plot_dataset_digits(train_dataset)
-train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
+# train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
 train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", 0.02)
-train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", 0.02, AugmentationMethod.OVERSAMPLING)
-train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", 0.02, AugmentationMethod.AUGMENTATIONS)
-train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", 0.02, AugmentationMethod.COUNTERFACTUALS)
+# train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", 0.02, AugmentationMethod.OVERSAMPLING)
+# train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", 0.02, AugmentationMethod.AUGMENTATIONS)
+# train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", 0.02, AugmentationMethod.COUNTERFACTUALS)
 
 ############################################################
 
