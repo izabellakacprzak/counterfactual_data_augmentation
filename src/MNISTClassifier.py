@@ -113,7 +113,7 @@ def test_MNIST(model, test_loader):
             correct += pred.eq(target.data.view_as(pred)).sum()
 
             y_true += target.tolist()
-            y_pred += pred.numpy().tolist()
+            y_pred += pred.numpy().cpu().tolist()
             # y_pred += pred.numpy().T[0].tolist()
     test_loss /= len(test_loader.dataset)
     # test_losses.append(test_loss)
