@@ -7,7 +7,7 @@ import csv
 import tqdm
 from params import *
 
-from morphomnist import morpho, perturb
+from morphomnist import morpho, perturb, measure
 
 perturbations = [
     perturb.Thinning(amount=.7),
@@ -44,7 +44,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     train_file_name = "data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt"
     test_file_name = "data/test_perturbed.pt"
     metrics_train_file_name = "data/train_perturbed_mnist_metrics.csv"
-    metrics_test_file_name = "data/est_perturbed_mnist_metrics.csv"
+    metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
     if os.path.exists(train_file_name) and os.path.exists(test_file_name):
         print('Perturbed MNIST dataset already exists')
@@ -63,6 +63,19 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     else:
         perc = int(l/(l * bias_conflicting_percentage))
 
+    intensity = 1
+    def thicken(idx, im, label, im_set, metrics):
+        perturbed_image = perturb_image(im, perturb.Thickening(amount=1.2))
+        _, _, thickness, _, _, _ = measure.measure_image(perturbed_image, verbose=False)
+        im_set.append((perturbed_image, label))
+        metrics.append([idx, thickness, intensity])
+
+    def thin(idx, im, label, im_set, metrics):
+        perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
+        _, _, thickness, _, _, _ = measure.measure_image(perturbed_image, verbose=False)
+        im_set.append((perturbed_image, label))
+        metrics.append([idx, thickness, intensity])
+
     count_bias = 0
     count_anti = 0
     for idx, (im, label) in enumerate(train_data):
@@ -72,50 +85,34 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
             if random.choice([0,1]) == 0:
-                perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
-                train_set.append((perturbed_image, label))
-                train_metrics.append([idx, 1.5])
+                thicken(idx, im, label, train_set, train_metrics)
             else:
-                perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
-                train_set.append((perturbed_image, label))
-                train_metrics.append([idx, 0.6])
+                thin(idx, im, label, train_set, train_metrics)
 
         else: # bias-aligned samples
             count_bias += 1
-            if label in THIN_CLASSES:
-                perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
-                train_set.append((perturbed_image, label))
-                train_metrics.append([idx, 1.5])
-            elif label in THICK_CLASSES:
-                perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
-                train_set.append((perturbed_image, label))
-                train_metrics.append([idx, 0.6])
+            if label in THICK_CLASSES:
+                thicken(idx, im, label, train_set, train_metrics)
+            elif label in THIN_CLASSES:
+                thin(idx, im, label, train_set, train_metrics)
             else:
                 if random.choice([0,1]) == 0:
-                    perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
-                    train_set.append((perturbed_image, label))
-                    train_metrics.append([idx, 1.5])
+                    thicken(idx, im, label, train_set, train_metrics)
                 else:
-                    perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
-                    train_set.append((perturbed_image, label))
-                    train_metrics.append([idx, 0.6])
+                    thin(idx, im, label, train_set, train_metrics)
 
     for idx, (im, label) in enumerate(test_data):
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(test_data)}')
         if random.choice([0,1]) == 0:
-            perturbed_image = perturb_image(im, perturb.Thickening(amount=1.5))
-            test_set.append((perturbed_image, label))
-            test_metrics.append([idx, 1.5])
+            thicken(idx, im, label, test_set, test_metrics)
         else:
-            perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
-            test_set.append((perturbed_image, label))
-            test_metrics.append([idx, 0.6])
+            thin(idx, im, label, test_set, test_metrics)
 
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
 
-    col_names = ['index', 'thickness']
+    col_names = ['index', 'thickness', 'intensity']
     save_to_csv(metrics_train_file_name, col_names, train_metrics)
     save_to_csv(metrics_test_file_name, col_names, test_metrics)
 
