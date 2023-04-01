@@ -1,10 +1,16 @@
+import time
 import numpy as np
 import random
 import os
 import sys
+import pandas as pd
 from PIL import Image
 import torch
 import torchvision
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from MNISTClassifier import ConvNet, train_MNIST, test_MNIST
 from params import *
@@ -200,12 +206,59 @@ def prepare_med_noisy_mnist(train_data, test_data, bias_conflicting_percentage):
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
 
-def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, accs):
+def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr):
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-    train_MNIST(model, train_loader, test_loader, accs)
+    accuracies, f1s = train_MNIST(model, train_loader, test_loader)
 
     # final testing
-    y_pred, y_true, acc = test_MNIST(model, test_loader)
-    accs.append(acc)
+    y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
+    accuracies.append(acc)
+    f1s.append(f1)
     pred_arr.append(y_pred)
     true_arr.append(y_true)
+
+    return accuracies, f1s
+
+def visualise_t_sne(data_label_tuples, file_name):
+    X, y = [], []
+    for img, label in data_label_tuples:
+        X.append(img.flatten())
+        y.append(label)
+
+    X = np.array(X)
+    y = np.array(y)
+    
+    feat_cols = ['pixel'+str(i) for i in range(X.shape[1])]
+    df = pd.DataFrame(X,columns=feat_cols)
+    df['y'] = y
+    df['label'] = df['y'].apply(lambda i: str(i))
+
+    N = 20000
+    rndperm = np.random.permutation(df.shape[0])
+    df_subset = df.loc[rndperm[:N],:].copy()
+    data_subset = df_subset[feat_cols].values
+
+    # reduce dimensions before feeding into t-SNE
+    pca_50 = PCA(n_components=50)
+    pca_result_50 = pca_50.fit_transform(data_subset)
+
+    time_start = time.time()
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    tsne_pca_results = tsne.fit_transform(pca_result_50)
+
+    print('t-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
+
+    df_subset['tsne-pca50-one'] = tsne_pca_results[:,0]
+    df_subset['tsne-pca50-two'] = tsne_pca_results[:,1]
+
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="y",
+        palette=sns.color_palette("hls", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name) 

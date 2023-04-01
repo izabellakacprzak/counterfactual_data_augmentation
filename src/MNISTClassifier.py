@@ -3,8 +3,9 @@ import torch.nn as nn
 from torchvision import models
 from torchvision.models import resnet18, ResNet18_Weights
 
-from utils.evaluate import pretty_print_evaluation
+from utils.evaluate import get_confusion_matrix, accuracy
 from params import *
+from sklearn.metrics import f1_score
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -70,11 +71,15 @@ class ConvNet(torch.nn.Module):
         # return x
 
 
-def train_MNIST(model, train_loader, test_loader, accs):
+def train_MNIST(model, train_loader, test_loader):
+    accs = []
+    f1s = []
     optimiser = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     for epoch in range(1, EPOCHS):
-        _, _, acc = test_MNIST(model, test_loader)
+        _, _, acc, f1 = test_MNIST(model, test_loader)
+        accs.append(acc)
+        f1s.append(f1)
 
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
@@ -91,7 +96,7 @@ def train_MNIST(model, train_loader, test_loader, accs):
             # train_losses.append(loss.item())
             # train_counter.append((batch_idx*64) + ((epoch-1)*len(train_loader.dataset)))
 
-        accs.append(acc)
+    return accs, f1s
 
 
 def test_MNIST(model, test_loader):
@@ -116,8 +121,12 @@ def test_MNIST(model, test_loader):
             y_pred += pred.cpu().numpy().tolist()
             # y_pred += pred.numpy().T[0].tolist()
     test_loss /= len(test_loader.dataset)
+    y_pred = np.asarray(y_pred)
+    y_true = np.asarray(y_true)
     # test_losses.append(test_loss)
-    accuracy = 100. * correct / len(test_loader.dataset)
+    confusion_matrix = get_confusion_matrix(y_pred, y_true)
+    acc = accuracy(confusion_matrix)
+    f1 = f1_score(y_true, y_pred)
     print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), accuracy))
-    return np.asarray(y_pred), np.asarray(y_true), accuracy
+    return y_pred, y_true, acc, f1
