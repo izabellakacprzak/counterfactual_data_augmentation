@@ -125,8 +125,9 @@ def test_MNIST(model, test_loader):
     y_true = np.asarray(y_true)
     # test_losses.append(test_loss)
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
-    acc = accuracy(confusion_matrix)
-    f1 = f1_score(y_true, y_pred)
+    acc = 100. * correct / len(test_loader.dataset)
+    f1 = f1_score(y_true, y_pred, average='macro')
+    print('\nF1 score: ' + str(f1)+'\n')
     print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset), accuracy))
+        test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, acc, f1

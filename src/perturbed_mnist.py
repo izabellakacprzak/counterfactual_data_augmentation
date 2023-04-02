@@ -27,7 +27,7 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     runs_arr.append(run_name)
     print(run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
-    visualise_t_sne(train_dataset.data_label_tuples, run_name+".png")
+    visualise_t_sne(train_dataset.data_label_tuples, "plots/"+run_name+".png")
     # print_classes_size(train_dataset)
     # plot_dataset_digits(train_dataset)
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc)
@@ -46,10 +46,10 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 
 # plot_dataset_digits(train_dataset)
 train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
-# train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", 0.02)
-# train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", 0.02, AugmentationMethod.OVERSAMPLING)
-# train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", 0.02, AugmentationMethod.AUGMENTATIONS)
-# train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", 0.02, AugmentationMethod.COUNTERFACTUALS)
+train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", 0.02)
+train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", 0.02, AugmentationMethod.OVERSAMPLING)
+train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", 0.02, AugmentationMethod.AUGMENTATIONS)
+train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", 0.02, AugmentationMethod.COUNTERFACTUALS)
 
 ############################################################
 
