@@ -56,6 +56,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     test_set = []
     train_metrics = []
     test_metrics = []
+    class_counts = {}
 
     l = len(train_data)
     if bias_conflicting_percentage == 0:
@@ -81,6 +82,11 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     for idx, (im, label) in enumerate(train_data):
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(train_data)}')
+
+        # Imbalanding the dataset further by cutting the number of samples of scarce classes
+        class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
+        if (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
+            continue
 
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
