@@ -3,6 +3,7 @@ import random
 import os
 import torch
 import csv
+import matplotlib.pyplot as plt
 
 import tqdm
 from params import *
@@ -46,9 +47,9 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     metrics_train_file_name = "data/train_perturbed_mnist_metrics.csv"
     metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
-    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
-        print('Perturbed MNIST dataset already exists')
-        return
+    # if os.path.exists(train_file_name) and os.path.exists(test_file_name):
+        # print('Perturbed MNIST dataset already exists')
+        # return
 
     print('Preparing Perturbed MNIST')
 
@@ -66,14 +67,26 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
 
     intensity = 1
     def thicken(idx, im, label, im_set, metrics):
-        perturbed_image = perturb_image(im, perturb.Thickening(amount=1.2))
-        _, _, thickness, _, _, _ = measure.measure_image(perturbed_image, verbose=False)
+        _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
+        if thickness > 2.0: # image is already thick
+            perturbed_image = im
+        else:
+            new_thickness = random.uniform(2.1, 4.5)
+            amount = (new_thickness/thickness)
+            perturbed_image = perturb_image(im, perturb.Thickening(amount=amount))
+            thickness = new_thickness
         im_set.append((perturbed_image, label))
         metrics.append([idx, thickness, intensity])
 
     def thin(idx, im, label, im_set, metrics):
-        perturbed_image = perturb_image(im, perturb.Thinning(amount=0.6))
-        _, _, thickness, _, _, _ = measure.measure_image(perturbed_image, verbose=False)
+        _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
+        if thickness <= 2.0: # image is already thin
+            perturbed_image = im
+        else:
+            new_thickness = random.uniform(1.0, 2.0)
+            amount = (new_thickness/thickness)
+            perturbed_image = perturb_image(im, perturb.Thinning(amount=amount))
+            thickness = new_thickness
         im_set.append((perturbed_image, label))
         metrics.append([idx, thickness, intensity])
 
@@ -84,9 +97,9 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             print(f'Converting image {idx}/{len(train_data)}')
 
         # Imbalanding the dataset further by cutting the number of samples of scarce classes
-        class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
-        if (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
-            continue
+        # class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
+        # if bias_conflicting_percentage != 1.0 and (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
+        #     continue
 
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
