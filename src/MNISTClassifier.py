@@ -130,4 +130,4 @@ def test_MNIST(model, test_loader):
     print('\nF1 score: ' + str(f1)+'\n')
     print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
-    return y_pred, y_true, acc.to(device), f1.to(device)
+    return y_pred, y_true, acc, f1
