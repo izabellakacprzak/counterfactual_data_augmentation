@@ -97,9 +97,10 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             print(f'Converting image {idx}/{len(train_data)}')
 
         # Imbalanding the dataset further by cutting the number of samples of biased classes
-        class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
-        if bias_conflicting_percentage != 1.0 and (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
+        if bias_conflicting_percentage != 1.0 and (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 2000:
             continue
+
+        class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
 
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
@@ -120,6 +121,14 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
                 else:
                     thin(idx, True, im, label, train_set, train_metrics)
 
+    torch.save(train_set, train_file_name)
+    col_names = ['index', 'thickness', 'intensity']
+    save_to_csv(metrics_train_file_name, col_names, train_metrics)
+
+    if os.path.exists(test_file_name):
+        print('Perturbed test MNIST dataset already exists')
+        return
+    
     for idx, (im, label) in enumerate(test_data):
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(test_data)}')
@@ -128,11 +137,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         else:
             thin(idx, False, im, label, test_set, test_metrics)
 
-    torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
-
-    col_names = ['index', 'thickness', 'intensity']
-    save_to_csv(metrics_train_file_name, col_names, train_metrics)
     save_to_csv(metrics_test_file_name, col_names, test_metrics)
 
 
