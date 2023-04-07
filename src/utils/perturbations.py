@@ -68,11 +68,11 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     intensity = 1
     def thicken(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
-        if thickness > 2.0: # image is already thick
+        if thickness >= 2.5: # image is already thick
             perturbed_image = np.array(im)
         else:
-            new_thickness = random.uniform(2.1, 4.5)
-            amount = (new_thickness/thickness)
+            new_thickness = random.uniform(2.5, 4.5)
+            amount = (new_thickness - thickness)/thickness
             perturbed_image = perturb_image(im, perturb.Thickening(amount=amount))
             thickness = new_thickness
         im_set.append((bias_aligned, perturbed_image, label))
@@ -80,11 +80,11 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
 
     def thin(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
-        if thickness <= 2.0: # image is already thin
+        if thickness <= 1.5: # image is already thin
             perturbed_image = np.array(im)
         else:
-            new_thickness = random.uniform(1.0, 2.0)
-            amount = (new_thickness/thickness)
+            new_thickness = random.uniform(1.0, 1.6)
+            amount = (thickness-new_thickness)/thickness
             perturbed_image = perturb_image(im, perturb.Thinning(amount=amount))
             thickness = new_thickness
         im_set.append((bias_aligned, perturbed_image, label))

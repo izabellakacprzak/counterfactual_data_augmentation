@@ -1,8 +1,10 @@
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import random
+from tqdm import tqdm
 
 from params import *
+from morphomnist import measure
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -58,3 +60,18 @@ def print_classes_size(dataset):
     for l in sorted(counts):
         print(str(l)+": "+str(counts[l]))
         print()
+
+def count_thick_thin_per_class(dataset):
+    thick_per_class = {}
+    thin_per_class = {}
+    for _, img, label in tqdm(dataset):
+        _, _, thickness, _, _, _ = measure.measure_image(img, verbose=False)
+        if thickness >= 2.5:
+            thick_per_class[label] = (thick_per_class[label] if label in thick_per_class else 0) + 1
+        else:
+            thin_per_class[label] = (thin_per_class[label] if label in thin_per_class else 0) + 1
+
+    print("Thick digits counts:")
+    print(thick_per_class)
+    print("Thin digits counts:")
+    print(thin_per_class)
