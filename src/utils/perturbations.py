@@ -47,9 +47,9 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     metrics_train_file_name = "data/train_perturbed_mnist_metrics.csv"
     metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
-    # if os.path.exists(train_file_name) and os.path.exists(test_file_name):
-        # print('Perturbed MNIST dataset already exists')
-        # return
+    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
+        print('Perturbed MNIST dataset already exists')
+        return
 
     print('Preparing Perturbed MNIST')
 
@@ -69,7 +69,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     def thicken(idx, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
         if thickness > 2.0: # image is already thick
-            perturbed_image = im
+            perturbed_image = np.array(im)
         else:
             new_thickness = random.uniform(2.1, 4.5)
             amount = (new_thickness/thickness)
@@ -81,7 +81,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     def thin(idx, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
         if thickness <= 2.0: # image is already thin
-            perturbed_image = im
+            perturbed_image = np.array(im)
         else:
             new_thickness = random.uniform(1.0, 2.0)
             amount = (new_thickness/thickness)
