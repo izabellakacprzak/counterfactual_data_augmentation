@@ -115,7 +115,7 @@ def test_MNIST(model, test_loader):
             test_loss += LOSS_FN(output, target)
             _, pred = torch.max(output, 1)
             # pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).sum()
+            correct += pred.eq(target.data.view_as(pred)).sum().cpu()
 
             y_true += target.tolist()
             y_pred += pred.cpu().numpy().tolist()

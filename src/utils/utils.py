@@ -65,9 +65,9 @@ def get_attr_label_multipliers(tuples):
 
     return oversample_multipliers
 
-def apply_debiasing_method(method, img, label, new_tuples):
+def apply_debiasing_method(method, bias_aligned, img, label, new_tuples):
     if method == AugmentationMethod.OVERSAMPLING:
-        new_tuples.append((img, label))
+        new_tuples.append((bias_aligned, img, label))
     elif method == AugmentationMethod.AUGMENTATIONS:
         augmentation = random.choice(list(Augmentation))
         # if augmentation == Augmentation.ROTATION:
@@ -81,16 +81,16 @@ def apply_debiasing_method(method, img, label, new_tuples):
             img = np.array(gauss(Image.fromarray(img)))
         elif augmentation == Augmentation.SALT_AND_PEPPER_NOISE:
             img = add_noise(img, "s&p")
-        new_tuples.append((img, label))
+        new_tuples.append((bias_aligned, img, label))
     elif method == AugmentationMethod.PERTURBATIONS:
         perturbation = random.choice(perturbations)
         img = perturb_image(img, perturbation)
-        new_tuples.append((img, label))
+        new_tuples.append((bias_aligned, img, label))
 
     else:
         print("Incorrect debiasing method given: " + str(method))
 
-def debias_mnist(train_data, method=AugmentationMethod.OVERSAMPLING):
+def debias_mnist(train_data, bias_conflicting_perc=0.01, method=AugmentationMethod.OVERSAMPLING):
     if method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt"):
         return torch.load("data/mnist_debiased_perturbed.pt")
     
@@ -102,17 +102,15 @@ def debias_mnist(train_data, method=AugmentationMethod.OVERSAMPLING):
         counterfactuals = train_data + counterfactuals
         random.shuffle(train_data + counterfactuals)
         return counterfactuals
-    # oversample_multipliers = get_attr_label_multipliers(train_data)
 
     new_tuples = []
     l = str(len(train_data))
-    for _, (img, label) in enumerate(train_data):
-        # bias_conflicting_perc=0.2, 100 1s - 20 normal, 80 thin, 4 times
-        # 
-        if label in THICK_CLASSES or label in THIN_CLASSES:
-            for _ in range(4):
-                apply_debiasing_method(method, img, label, new_tuples)
-        new_tuples.append((img, label))
+    for _, (bias_aligned, img, label) in enumerate(train_data):
+        if bias_aligned and (label in THICK_CLASSES or label in THIN_CLASSES):
+            for _ in range((2-bias_conflicting_perc) / bias_conflicting_perc):
+                apply_debiasing_method(method, bias_aligned, img, label, new_tuples)
+        else:
+            new_tuples.append((bias_aligned, img, label))
 
     if method == AugmentationMethod.PERTURBATIONS:
         torch.save(new_tuples, "data/mnist_debiased_perturbed.pt")
@@ -221,7 +219,7 @@ def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pre
 
 def visualise_t_sne(data_label_tuples, file_name):
     X, y = [], []
-    for img, label in data_label_tuples:
+    for _, img, label in data_label_tuples:
         X.append(img.flatten())
         y.append(label)
 

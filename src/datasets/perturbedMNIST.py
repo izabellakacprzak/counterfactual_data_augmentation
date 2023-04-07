@@ -18,13 +18,13 @@ class PerturbedMNIST(datasets.VisionDataset):
     if train:
       self.data_label_tuples = torch.load("data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt")
       if method != AugmentationMethod.NONE:
-        self.data_label_tuples = debias_mnist(train_data=self.data_label_tuples, method=method)
+        self.data_label_tuples = debias_mnist(train_data=self.data_label_tuples, bias_conflicting_perc=bias_conflicting_percentage, method=method)
       
     else:
       self.data_label_tuples = torch.load("data/test_perturbed.pt")
 
   def __getitem__(self, index):
-    img, target = self.data_label_tuples[index]
+    _, img, target = self.data_label_tuples[index]
 
     if self.transform is not None:
       img = self.transform(img)

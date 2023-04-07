@@ -6,7 +6,7 @@ from scipy import stats
 from datasets.perturbedMNIST import PerturbedMNIST
 
 from params import *
-from utils.evaluate import print_classes_size, pretty_print_evaluation, count_thick_thin_per_class
+from utils.evaluate import print_classes_size, pretty_print_evaluation
 from utils.utils import AugmentationMethod, train_and_evaluate, visualise_t_sne
 
 pred_arr = []
@@ -44,9 +44,9 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 # balanced, imbalanced, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-bias_conflicting_perc = 0.02
+bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
-# train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
+train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
 train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", bias_conflicting_perc)
 # train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
 # train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)

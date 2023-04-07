@@ -66,7 +66,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         perc = int(l/(l * bias_conflicting_percentage))
 
     intensity = 1
-    def thicken(idx, im, label, im_set, metrics):
+    def thicken(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
         if thickness > 2.0: # image is already thick
             perturbed_image = np.array(im)
@@ -75,10 +75,10 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             amount = (new_thickness/thickness)
             perturbed_image = perturb_image(im, perturb.Thickening(amount=amount))
             thickness = new_thickness
-        im_set.append((perturbed_image, label))
+        im_set.append((bias_aligned, perturbed_image, label))
         metrics.append([idx, thickness, intensity])
 
-    def thin(idx, im, label, im_set, metrics):
+    def thin(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
         if thickness <= 2.0: # image is already thin
             perturbed_image = np.array(im)
@@ -87,7 +87,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             amount = (new_thickness/thickness)
             perturbed_image = perturb_image(im, perturb.Thinning(amount=amount))
             thickness = new_thickness
-        im_set.append((perturbed_image, label))
+        im_set.append((bias_aligned, perturbed_image, label))
         metrics.append([idx, thickness, intensity])
 
     count_bias = 0
@@ -96,37 +96,37 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(train_data)}')
 
-        # Imbalanding the dataset further by cutting the number of samples of scarce classes
-        # class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
-        # if bias_conflicting_percentage != 1.0 and (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
-        #     continue
+        # Imbalanding the dataset further by cutting the number of samples of biased classes
+        class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
+        if bias_conflicting_percentage != 1.0 and (label in THICK_CLASSES or label in THIN_CLASSES) and class_counts[label] >= 3000:
+            continue
 
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
             if random.choice([0,1]) == 0:
-                thicken(idx, im, label, train_set, train_metrics)
+                thicken(idx, False, im, label, train_set, train_metrics)
             else:
-                thin(idx, im, label, train_set, train_metrics)
+                thin(idx, False, im, label, train_set, train_metrics)
 
         else: # bias-aligned samples
             count_bias += 1
             if label in THICK_CLASSES:
-                thicken(idx, im, label, train_set, train_metrics)
+                thicken(idx, True, im, label, train_set, train_metrics)
             elif label in THIN_CLASSES:
-                thin(idx, im, label, train_set, train_metrics)
+                thin(idx, True, im, label, train_set, train_metrics)
             else:
                 if random.choice([0,1]) == 0:
-                    thicken(idx, im, label, train_set, train_metrics)
+                    thicken(idx, True, im, label, train_set, train_metrics)
                 else:
-                    thin(idx, im, label, train_set, train_metrics)
+                    thin(idx, True, im, label, train_set, train_metrics)
 
     for idx, (im, label) in enumerate(test_data):
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(test_data)}')
         if random.choice([0,1]) == 0:
-            thicken(idx, im, label, test_set, test_metrics)
+            thicken(idx, False, im, label, test_set, test_metrics)
         else:
-            thin(idx, im, label, test_set, test_metrics)
+            thin(idx, False, im, label, test_set, test_metrics)
 
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
