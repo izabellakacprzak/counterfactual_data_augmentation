@@ -92,6 +92,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
 
     count_bias = 0
     count_anti = 0
+    curr_idx = 0
     for idx, (im, label) in enumerate(train_data):
         if idx % 1000 == 0:
             print(f'Converting image {idx}/{len(train_data)}')
@@ -104,21 +105,23 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
             if random.choice([0,1]) == 0:
-                thicken(idx, False, im, label, train_set, train_metrics)
+                thicken(curr_idx, False, im, label, train_set, train_metrics)
             else:
-                thin(idx, False, im, label, train_set, train_metrics)
+                thin(curr_idx, False, im, label, train_set, train_metrics)
 
         else: # bias-aligned samples
             count_bias += 1
             if label in THICK_CLASSES:
-                thicken(idx, True, im, label, train_set, train_metrics)
+                thicken(curr_idx, True, im, label, train_set, train_metrics)
             elif label in THIN_CLASSES:
-                thin(idx, True, im, label, train_set, train_metrics)
+                thin(curr_idx, True, im, label, train_set, train_metrics)
             else:
                 if random.choice([0,1]) == 0:
-                    thicken(idx, True, im, label, train_set, train_metrics)
+                    thicken(curr_idx, True, im, label, train_set, train_metrics)
                 else:
-                    thin(idx, True, im, label, train_set, train_metrics)
+                    thin(curr_idx, True, im, label, train_set, train_metrics)
+
+        curr_idx += 1
 
     torch.save(train_set, train_file_name)
     col_names = ['index', 'thickness', 'intensity']
