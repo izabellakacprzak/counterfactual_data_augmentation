@@ -107,7 +107,7 @@ def debias_mnist(train_data, bias_conflicting_perc=0.01, method=AugmentationMeth
     l = str(len(train_data))
     for _, (bias_aligned, img, label) in enumerate(train_data):
         if bias_aligned and (label in THICK_CLASSES or label in THIN_CLASSES):
-            for _ in range((2-bias_conflicting_perc) / bias_conflicting_perc):
+            for _ in range(10):
                 apply_debiasing_method(method, bias_aligned, img, label, new_tuples)
         else:
             new_tuples.append((bias_aligned, img, label))
