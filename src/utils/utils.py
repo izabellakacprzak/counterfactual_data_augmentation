@@ -231,9 +231,9 @@ def visualise_t_sne(data_label_tuples, file_name):
     df['y'] = y
     df['label'] = df['y'].apply(lambda i: str(i))
 
-    N = 20000
+    # N = 40000
     rndperm = np.random.permutation(df.shape[0])
-    df_subset = df.loc[rndperm[:N],:].copy()
+    df_subset = df.loc[rndperm,:].copy()
     data_subset = df_subset[feat_cols].values
 
     # reduce dimensions before feeding into t-SNE
