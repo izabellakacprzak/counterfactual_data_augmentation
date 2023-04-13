@@ -47,7 +47,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     metrics_train_file_name = "data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv"
     metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
-    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
+    if (os.path.exists(train_file_name) and os.path.exists(test_file_name) and
         os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
         print('Perturbed MNIST dataset already exists')
         return
