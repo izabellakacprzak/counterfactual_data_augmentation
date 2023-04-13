@@ -18,7 +18,7 @@ class PerturbedMNIST(datasets.VisionDataset):
     prepare_perturbed_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
     if train:
       self.data_label_tuples = torch.load("data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt")
-      self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics.csv", index_col='index')
+      self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index')
       if method != AugmentationMethod.NONE and method != AugmentationMethod.COUNTERFACTUALS:
         self.data_label_tuples = debias_mnist(train_data=self.data_label_tuples, bias_conflicting_perc=bias_conflicting_percentage, method=method)
       
