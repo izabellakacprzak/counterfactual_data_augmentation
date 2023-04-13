@@ -1,11 +1,14 @@
 import torch 
 
-LEARNING_RATE = 0.002
+LEARNING_RATE = 0.0001
 EPOCHS = 15
+LAMBDA = 1.0
+DO_CF_REGULARISATION = True
 IN_CHANNELS = 3
 NUM_OF_CLASSES = 2
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 LOSS_FN = torch.nn.CrossEntropyLoss()
+MSE = torch.nn.MSELoss()
 TRAIN_FILE = "data/train_colored"
 TEST_FILE = "data/test_colored.pt"
 MED_TRAIN_FILE = "data/train_med"

@@ -1,11 +1,13 @@
 import numpy as np
 import torch.nn as nn
-from torchvision import models
-from torchvision.models import resnet152, ResNet18_Weights
+from torchvision.models import resnet152
+import torchvision.transforms as TF
+from torchvision import transforms
 
-from utils.evaluate import get_confusion_matrix, accuracy
+from utils.evaluate import get_confusion_matrix
 from params import *
 from sklearn.metrics import f1_score
+from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -19,74 +21,46 @@ class ConvNet(torch.nn.Module):
         num_features = self.model.fc.in_features
         self.model.fc = nn.Linear(num_features, out_channels)
         self.model = self.model.to(device)
-        # self.layer1 = nn.Sequential(
-        #     nn.Conv2d(in_channels, 16, kernel_size=3),
-        #     nn.BatchNorm2d(16),
-        #     nn.ReLU())
-
-        # self.layer2 = nn.Sequential(
-        #     nn.Conv2d(16, 16, kernel_size=3),
-        #     nn.BatchNorm2d(16),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=2, stride=2))
-
-        # self.layer3 = nn.Sequential(
-        #     nn.Conv2d(16, 64, kernel_size=3),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU())
-        
-        # self.layer4 = nn.Sequential(
-        #     nn.Conv2d(64, 64, kernel_size=3),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU())
-
-        # self.layer5 = nn.Sequential(
-        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
-        #     nn.BatchNorm2d(64),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=2, stride=2))
-
-        # self.fc = nn.Sequential(
-        #     nn.Linear(64 * 4 * 4, 128),
-        #     nn.ReLU(),
-        #     nn.Linear(128, 128),
-        #     nn.ReLU(),
-        #     nn.Linear(128, out_channels))
 
         self.labels = list(range(0, out_channels))
         self.out_channels = out_channels
 
     def forward(self, x):
         with torch.no_grad():
-            # x = self.transforms(x)
-            y_pred = self.resnet18(x)
+            y_pred = self.model(x)
             return y_pred.argmax(dim=1)
-        # x = self.layer1(x)
-        # x = self.layer2(x)
-        # x = self.layer3(x)
-        # x = self.layer4(x)
-        # x = self.layer5(x)
-        # x = x.view(x.size(0), -1)
-        # x = self.fc(x)
-        # return x
 
+    def regularisation(self, x, metrics, labels, logits):
+        cfs = []
+        if DO_CF_REGULARISATION:
+            for i in range(len(x)):
+                img = (x[i][0].float() - 127.5) / 127.5
+                img = TF.Pad(padding=2)(img.type(torch.ByteTensor)).unsqueeze(0)
+                x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
+                cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float())
+            
+            cfs = torch.stack(cfs)
+            logits_cf = self.model(cfs)
+            return LAMBDA * MSE(logits, logits_cf)
+        
+        return 0
 
 def train_MNIST(model, train_loader, test_loader):
     accs = []
     f1s = []
-    optimiser = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     for epoch in range(1, EPOCHS):
         _, _, acc, f1 = test_MNIST(model, test_loader)
         accs.append(acc)
         f1s.append(f1)
 
-        model.train()
-        for batch_idx, (data, target) in enumerate(train_loader):
+        model.model.train()
+        for batch_idx, (data, metrics, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimiser.zero_grad()
-            output = model.model(data)
-            loss = LOSS_FN(output, target)
+            logits = model.model(data)
+            loss = LOSS_FN(logits, target) + model.regularisation(data, metrics, target, logits)
             loss.backward()
             optimiser.step()
             if batch_idx % 10 == 0:
@@ -100,7 +74,7 @@ def train_MNIST(model, train_loader, test_loader):
 
 
 def test_MNIST(model, test_loader):
-    model.eval()
+    model.model.eval()
     test_loss = 0
     correct = 0
     c_matrix = np.zeros((model.out_channels, model.out_channels))
@@ -108,7 +82,7 @@ def test_MNIST(model, test_loader):
     y_true = []
     y_pred = []
     with torch.no_grad():
-        for data, target in test_loader:
+        for data, _, target in test_loader:
             data = data.to(device)
             target = target.to(device)
             output = model.model(data)
