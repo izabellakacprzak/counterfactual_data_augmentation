@@ -3,9 +3,12 @@ import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
 import numpy as np
+import torchvision.transforms as TF
+from scipy import stats
 
 from params import *
 from morphomnist import measure
+from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -53,6 +56,17 @@ def plot_dataset_digits(dataset):
 
   plt.show()  # finally, render the plot
 
+def save_plot_for_metric(metric_name, metric_arr, run_name):
+    x, y = np.array(list(range(EPOCHS))), metric_arr
+    res = stats.linregress(x, y)
+    plt.figure(figsize=(10,10))
+    plt.plot(x, y, 'o', label='original data')
+    # plt.plot(x, res.intercept + res.slope*x, 'r', label='fitted line')
+    plt.xlabel("Epoch")
+    plt.ylabel(metric_name)
+    plt.legend()
+    plt.savefig("plots/"+run_name+metric_name+".png")
+
 def print_classes_size(dataset):
     counts = {}
     for _, _, y in dataset:
@@ -80,17 +94,23 @@ def count_thick_thin_per_class(dataset):
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, original_data, counterfactual_data):
+def classifier_fairness_analysis(model, test_loader):
     X, Y = [], []
 
-    for idx in range(len(original_data)):
-        original_pred = model.model(original_data[idx]).cpu()
-        _, original_pred = torch.max(original_pred, 1)
-        X.append(original_pred)
+    model.model.eval()
+    for data, metrics, label in test_loader:
+        for _ in range(100):
+            original_pred = model.model(data).cpu()
+            _, original_pred = torch.max(original_pred, 1)
+            X.append(original_pred)
 
-        counterfactual_pred = model.model(counterfactual_data[idx]).cpu()
-        _, counterfactual_pred = torch.max(counterfactual_pred, 1)
-        Y.append(counterfactual_pred)
+            img = (data.float() - 127.5) / 127.5
+            img = TF.Pad(padding=2)(img.type(torch.ByteTensor)).unsqueeze(0)
+            cf = generate_counterfactual_for_x(img, metrics['thickness'], metrics['intensity'], label)
+            cf = torch.from_numpy(cf).unsqueeze(0).float()
+            counterfactual_pred = model.model(cf).cpu()
+            _, counterfactual_pred = torch.max(counterfactual_pred, 1)
+            Y.append(counterfactual_pred)
 
     X = np.array(X)
     Y = np.array(Y)

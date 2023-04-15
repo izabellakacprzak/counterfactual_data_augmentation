@@ -47,8 +47,8 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     metrics_train_file_name = "data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv"
     metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
-    if (os.path.exists(train_file_name) and os.path.exists(test_file_name) and
-        os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
+    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
+        # os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
         print('Perturbed MNIST dataset already exists')
         return
 
@@ -76,8 +76,8 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             amount = (new_thickness - thickness)/thickness
             perturbed_image = perturb_image(im, perturb.Thickening(amount=amount))
             thickness = new_thickness
-        im_set.append((bias_aligned, perturbed_image, label))
-        metrics.append([idx, thickness, intensity])
+        im_set.append((perturbed_image, label))
+        metrics.append([idx, thickness, intensity, bias_aligned])
 
     def thin(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
@@ -88,8 +88,8 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             amount = (thickness-new_thickness)/thickness
             perturbed_image = perturb_image(im, perturb.Thinning(amount=amount))
             thickness = new_thickness
-        im_set.append((bias_aligned, perturbed_image, label))
-        metrics.append([idx, thickness, intensity])
+        im_set.append((perturbed_image, label))
+        metrics.append([idx, thickness, intensity, bias_aligned])
 
     count_bias = 0
     count_anti = 0
@@ -125,7 +125,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         curr_idx += 1
 
     torch.save(train_set, train_file_name)
-    col_names = ['index', 'thickness', 'intensity']
+    col_names = ['index', 'thickness', 'intensity', 'bias_aligned']
     save_to_csv(metrics_train_file_name, col_names, train_metrics)
 
     if os.path.exists(test_file_name):

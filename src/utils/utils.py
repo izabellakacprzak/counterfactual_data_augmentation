@@ -24,6 +24,7 @@ class AugmentationMethod(Enum):
     AUGMENTATIONS = 4
     PERTURBATIONS = 5
     COUNTERFACTUALS = 6
+    CF_REGULARISATION = 7
 
 class Augmentation(Enum):
 #     ROTATION = 1
@@ -65,9 +66,9 @@ def get_attr_label_multipliers(tuples):
 
     return oversample_multipliers
 
-def apply_debiasing_method(method, bias_aligned, img, label, new_tuples):
+def apply_debiasing_method(method, img, label):
     if method == AugmentationMethod.OVERSAMPLING:
-        new_tuples.append((bias_aligned, img, label))
+        return img
     elif method == AugmentationMethod.AUGMENTATIONS:
         augmentation = random.choice(list(Augmentation))
         # if augmentation == Augmentation.ROTATION:
@@ -81,41 +82,38 @@ def apply_debiasing_method(method, bias_aligned, img, label, new_tuples):
             img = np.array(gauss(Image.fromarray(img)))
         elif augmentation == Augmentation.SALT_AND_PEPPER_NOISE:
             img = add_noise(img, "s&p")
-        new_tuples.append((bias_aligned, img, label))
-    elif method == AugmentationMethod.PERTURBATIONS:
+        return img
+    else:
         perturbation = random.choice(perturbations)
         img = perturb_image(img, perturbation)
-        new_tuples.append((bias_aligned, img, label))
+        return img
 
-    else:
-        print("Incorrect debiasing method given: " + str(method))
-
-def debias_mnist(train_data, bias_conflicting_perc=0.01, method=AugmentationMethod.OVERSAMPLING):
-    if method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt"):
-        return torch.load("data/mnist_debiased_perturbed.pt")
+def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLING):
+    if (method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and
+        os.path.exists("data/mnist_debiased_perturbed_metrics.csv")):
+        return torch.load("data/mnist_debiased_perturbed.pt"), pd.read_csv("data/mnist_debiased_perturbed_metrics.csv", index_col='index')
     
     if method == AugmentationMethod.COUNTERFACTUALS:
-        if not os.path.exists(MORPHO_MNIST_COUNTERFACTUALS):
+        if not os.path.exists(COUNTERFACTUALS_DATA) or not os.path.exists(COUNTERFACTUALS_METRICS):
             sys.exit("Error: file with counterfactuals does not exist!")
 
-        counterfactuals = torch.load(MORPHO_MNIST_COUNTERFACTUALS)
-        counterfactuals = train_data + counterfactuals
-        random.shuffle(train_data + counterfactuals)
-        return counterfactuals
+        return train_data + torch.load(COUNTERFACTUALS_DATA), train_metrics + pd.read_csv(COUNTERFACTUALS_METRICS, index_col='index')
 
-    new_tuples = []
-    l = str(len(train_data))
-    for _, (bias_aligned, img, label) in enumerate(train_data):
+    new_data = []
+    new_metrics = []
+    for idx, (bias_aligned, img, label) in enumerate(train_data):
+        metrics = train_metrics[idx]
         if bias_aligned and (label in THICK_CLASSES or label in THIN_CLASSES):
             for _ in range(10):
-                apply_debiasing_method(method, bias_aligned, img, label, new_tuples)
-        else:
-            new_tuples.append((bias_aligned, img, label))
+                new_data.append(apply_debiasing_method(method, img), label)
+                new_m = metrics.copy()
+                new_m['bias_aligned'] = False
+                new_metrics.append(new_m)
 
     if method == AugmentationMethod.PERTURBATIONS:
-        torch.save(new_tuples, "data/mnist_debiased_perturbed.pt")
+        torch.save(train_data + new_data, "data/mnist_debiased_perturbed.pt")
 
-    return new_tuples
+    return train_data + new_data, train_metrics + new_metrics
 
 def add_noise(image, noise_type="gauss"):
    if noise_type == "gauss":
@@ -204,9 +202,9 @@ def prepare_med_noisy_mnist(train_data, test_data, bias_conflicting_percentage):
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
 
-def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr):
+def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, do_cf_regularisation=False):
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-    accuracies, f1s = train_MNIST(model, train_loader, test_loader)
+    accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation)
 
     # final testing
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)

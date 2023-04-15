@@ -2,11 +2,10 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from matplotlib import pyplot as plt
 import numpy as np
-from scipy import stats
 from datasets.perturbedMNIST import PerturbedMNIST
 
 from params import *
-from utils.evaluate import print_classes_size, pretty_print_evaluation, count_thick_thin_per_class
+from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric
 from utils.utils import AugmentationMethod, train_and_evaluate, visualise_t_sne
 
 pred_arr = []
@@ -19,8 +18,7 @@ in_channels = 1
 out_channels = 10
 
 transforms_list = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.1307), (0.3081))])
+                    transforms.ToTensor()])
 
 def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
@@ -35,7 +33,7 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
-    accuracies, f1s = train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr)
+    accuracies, f1s = train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, debiasing_method==AugmentationMethod.CF_REGULARISATION)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
 
@@ -46,28 +44,18 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 
 bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
-# train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
+train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
 # train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", bias_conflicting_perc)
 # train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
 # train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
-train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
+# train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
+# train_and_evaluate_dataset("CF_REGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
 
 ############################################################
 
-def save_plot_for_metric(metric_name, metric_arr):
-    x, y = np.array(list(range(EPOCHS))), metric_arr
-    res = stats.linregress(x, y)
-    plt.figure(figsize=(10,10))
-    plt.plot(x, y, 'o', label='original data')
-    # plt.plot(x, res.intercept + res.slope*x, 'r', label='fitted line')
-    plt.xlabel("Epoch")
-    plt.ylabel(metric_name)
-    plt.legend()
-    plt.savefig("plots/"+runs_arr[idx]+metric_name+".png")
-
 for idx in range(len(runs_arr)):
     print(runs_arr[idx])
-    save_plot_for_metric("Accuracy", accs_arr[idx])
-    save_plot_for_metric("F1", f1s_arr[idx])
+    save_plot_for_metric("Accuracy", accs_arr[idx], runs_arr[idx])
+    save_plot_for_metric("F1", f1s_arr[idx], runs_arr[idx])
     # plt.show()
     pretty_print_evaluation(pred_arr[idx], true_arr[idx], range(out_channels))
