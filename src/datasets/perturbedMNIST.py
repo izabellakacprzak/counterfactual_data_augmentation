@@ -28,7 +28,7 @@ class PerturbedMNIST(datasets.VisionDataset):
       self.metrics = pd.read_csv("data/test_perturbed_mnist_metrics.csv", index_col='index').to_dict('records')
 
   def __getitem__(self, index):
-    _, img, target = self.data_label_tuples[index]
+    img, target = self.data[index]
     metrics = {k: torch.tensor(float(self.metrics[index][k])) for k in ['thickness', 'intensity', 'bias_aligned']}
 
     if self.transform is not None:

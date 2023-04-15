@@ -24,9 +24,9 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     runs_arr.append(run_name)
     print(run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
-    # visualise_t_sne(train_dataset.data_label_tuples, "plots/"+run_name+"t_sne.png")
+    # visualise_t_sne(train_dataset.data, "plots/"+run_name+"t_sne.png")
     print_classes_size(train_dataset)
-    # count_thick_thin_per_class(train_dataset.data_label_tuples)
+    # count_thick_thin_per_class(train_dataset.datas)
     # plot_dataset_digits(train_dataset)
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc)
 

@@ -215,9 +215,9 @@ def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pre
 
     return accuracies, f1s
 
-def visualise_t_sne(data_label_tuples, file_name):
+def visualise_t_sne(data, file_name):
     X, y = [], []
-    for _, img, label in data_label_tuples:
+    for img, label in data:
         X.append(img.flatten())
         y.append(label)
 
