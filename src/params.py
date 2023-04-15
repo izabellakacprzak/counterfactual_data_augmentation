@@ -1,9 +1,8 @@
 import torch 
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 EPOCHS = 15
 LAMBDA = 1.0
-DO_CF_REGULARISATION = True
 IN_CHANNELS = 3
 NUM_OF_CLASSES = 2
 BATCH_SIZE = 128
@@ -16,7 +15,8 @@ MED_TEST_FILE = "data/test_med.pt"
 TRAIN_PERTURBED_FILE = "data/train_mnist_perturbed.pt"
 CUT_PERCENTAGE = 0.01
 UNDERSAMPLED_CLASSES = [7, 8]
-MORPHO_MNIST_COUNTERFACTUALS = "../../DSCMv2/src/data/generated_counterfactuals.pt"
+COUNTERFACTUALS_DATA = "../../DSCMv2/src/data/generated_counterfactuals.pt"
+COUNTERFACTUALS_METRICS = "../../DSCMv2/src/data/generated_counterfactuals_metrics.csv"
 
 THIN_CLASSES = [0, 7, 8]
 THICK_CLASSES = [1, 3, 6, 9]

@@ -2,7 +2,6 @@ import numpy as np
 import torch.nn as nn
 from torchvision.models import resnet152
 import torchvision.transforms as TF
-from torchvision import transforms
 
 from utils.evaluate import get_confusion_matrix
 from params import *
@@ -32,20 +31,18 @@ class ConvNet(torch.nn.Module):
 
     def regularisation(self, x, metrics, labels, logits):
         cfs = []
-        if DO_CF_REGULARISATION:
-            for i in range(len(x)):
-                img = (x[i][0].float() - 127.5) / 127.5
-                img = TF.Pad(padding=2)(img.type(torch.ByteTensor)).unsqueeze(0)
-                x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
-                cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float())
-            
-            cfs = torch.stack(cfs)
-            logits_cf = self.model(cfs)
-            return LAMBDA * MSE(logits, logits_cf)
+        for i in range(len(x)):
+            img = x[i][0].float() * 254
+            img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
+            x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
+            cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float())
         
-        return 0
+        cfs = torch.stack(cfs)
+        logits_cf = self.model(cfs)
+        return LAMBDA * MSE(logits, logits_cf)
 
-def train_MNIST(model, train_loader, test_loader):
+
+def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
     accs = []
     f1s = []
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -60,7 +57,9 @@ def train_MNIST(model, train_loader, test_loader):
             data, target = data.to(device), target.to(device)
             optimiser.zero_grad()
             logits = model.model(data)
-            loss = LOSS_FN(logits, target) + model.regularisation(data, metrics, target, logits)
+            loss = LOSS_FN(logits, target)
+            if do_cf_regularisation:
+                loss += model.regularisation(data, metrics, target, logits)
             loss.backward()
             optimiser.step()
             if batch_idx % 10 == 0:
