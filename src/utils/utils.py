@@ -66,7 +66,7 @@ def get_attr_label_multipliers(tuples):
 
     return oversample_multipliers
 
-def apply_debiasing_method(method, img, label):
+def apply_debiasing_method(method, img):
     if method == AugmentationMethod.OVERSAMPLING:
         return img
     elif method == AugmentationMethod.AUGMENTATIONS:
@@ -97,15 +97,16 @@ def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLI
         if not os.path.exists(COUNTERFACTUALS_DATA) or not os.path.exists(COUNTERFACTUALS_METRICS):
             sys.exit("Error: file with counterfactuals does not exist!")
 
-        return train_data + torch.load(COUNTERFACTUALS_DATA), train_metrics + pd.read_csv(COUNTERFACTUALS_METRICS, index_col='index')
+        cfs = pd.read_csv(COUNTERFACTUALS_METRICS, index_col=None).to_dict('records')
+        return train_data + torch.load(COUNTERFACTUALS_DATA), train_metrics + cfs
 
     new_data = []
     new_metrics = []
-    for idx, (bias_aligned, img, label) in enumerate(train_data):
+    for idx, (img, label) in enumerate(train_data):
         metrics = train_metrics[idx]
-        if bias_aligned and (label in THICK_CLASSES or label in THIN_CLASSES):
+        if metrics['bias_aligned'] and (label in THICK_CLASSES or label in THIN_CLASSES):
             for _ in range(10):
-                new_data.append(apply_debiasing_method(method, img), label)
+                new_data.append((apply_debiasing_method(method, img), label))
                 new_m = metrics.copy()
                 new_m['bias_aligned'] = False
                 new_metrics.append(new_m)
@@ -215,23 +216,27 @@ def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pre
 
     return accuracies, f1s
 
-def visualise_t_sne(data, file_name):
-    X, y = [], []
-    for img, label in data:
+def visualise_t_sne(data, metrics, file_name):
+    X, t, b, y = [], [], [], []
+    for idx, (img, label) in enumerate(data):
         X.append(img.flatten())
+        t.append(int(metrics[idx]['thickness']))
+        b.append(metrics[idx]['bias_aligned'])
         y.append(label)
 
     X = np.array(X)
+    t = np.array(t)
+    b = np.array(b)
     y = np.array(y)
     
     feat_cols = ['pixel'+str(i) for i in range(X.shape[1])]
     df = pd.DataFrame(X,columns=feat_cols)
     df['y'] = y
-    df['label'] = df['y'].apply(lambda i: str(i))
+    df['labels'] = df['y'].apply(lambda i: str(i))
 
-    # N = 40000
+    N = 40000
     rndperm = np.random.permutation(df.shape[0])
-    df_subset = df.loc[rndperm,:].copy()
+    df_subset = df.loc[rndperm[:N],:].copy()
     data_subset = df_subset[feat_cols].values
 
     # reduce dimensions before feeding into t-SNE

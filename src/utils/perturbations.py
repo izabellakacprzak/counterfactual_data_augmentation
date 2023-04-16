@@ -118,9 +118,9 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
                 thin(curr_idx, True, im, label, train_set, train_metrics)
             else:
                 if random.choice([0,1]) == 0:
-                    thicken(curr_idx, True, im, label, train_set, train_metrics)
+                    thicken(curr_idx, False, im, label, train_set, train_metrics)
                 else:
-                    thin(curr_idx, True, im, label, train_set, train_metrics)
+                    thin(curr_idx, False, im, label, train_set, train_metrics)
 
         curr_idx += 1
 
