@@ -12,7 +12,7 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from MNISTClassifier import ConvNet, train_MNIST, test_MNIST
+from MNISTClassifier import train_MNIST, test_MNIST
 from params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
@@ -203,11 +203,8 @@ def prepare_med_noisy_mnist(train_data, test_data, bias_conflicting_percentage):
     torch.save(train_set, train_file_name)
     torch.save(test_set, test_file_name)
 
-def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pred_arr, true_arr, do_cf_regularisation=False):
-    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False):
     accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation)
-
-    # final testing
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
     accuracies.append(acc)
     f1s.append(f1)
@@ -216,25 +213,44 @@ def train_and_evaluate(train_loader, test_loader, in_channels, out_channels, pre
 
     return accuracies, f1s
 
-def visualise_t_sne(data, metrics, file_name):
-    X, t, b, y = [], [], [], []
-    for idx, (img, label) in enumerate(data):
-        X.append(img.flatten())
-        t.append(int(metrics[idx]['thickness']))
-        b.append(metrics[idx]['bias_aligned'])
-        y.append(label)
+def get_embeddings(model_name, data_loader):
+    model = torch.load("../../checkpoints/" + model_name)
+    model.eval()
+    # Define your output variable that will hold the output
+    out = None
+    # Define a hook function. It sets the global out variable equal to the
+    # output of the layer to which this hook is attached to.
+    def hook(module, input, output):
+        global out
+        out = output
+        return None
+    # Your model layer has a register_forward_hook that does the registering for you
+    model.drop_6.register_forward_hook(hook)
 
-    X = np.array(X)
-    t = np.array(t)
-    b = np.array(b)
-    y = np.array(y)
+    # Then you just loop through your dataloader to extract the embeddings
+    embeddings = np.zeros(shape=(0,2048))
+    labels = np.zeros(shape=(0))
+    thicknesses = np.zeros(shape=(0))
+    for _, (data, metrics, target) in enumerate(data_loader):
+        # data, target = data.to(device), target.to(device)
+        # global out
+        # x = x.cuda()
+        model(data)
+        labels = np.concatenate((labels, target.numpy().ravel()))
+        embeddings = np.concatenate([embeddings, out.detach().cpu().numpy()],axis=0)
+        thicknesses = np.concatenate((thicknesses, metrics['thickness']))
+
+    return embeddings, thicknesses, labels
+
+def visualise_t_sne(test_loader, model_name, file_name):
+    embeddings, thicknesses, labels = get_embeddings(model_name, test_loader)
     
     feat_cols = ['pixel'+str(i) for i in range(X.shape[1])]
-    df = pd.DataFrame(X,columns=feat_cols)
-    df['y'] = y
-    df['labels'] = df['y'].apply(lambda i: str(i))
+    df = pd.DataFrame(embeddings, columns=feat_cols)
+    df['y'] = labels
+    df['label'] = df['y'].apply(lambda i: str(i))
 
-    N = 40000
+    N = 100000
     rndperm = np.random.permutation(df.shape[0])
     df_subset = df.loc[rndperm[:N],:].copy()
     data_subset = df_subset[feat_cols].values
@@ -256,7 +272,7 @@ def visualise_t_sne(data, metrics, file_name):
     plot = sns.scatterplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="y",
-        palette=sns.color_palette("hls", 10),
+        palette=sns.color_palette("hls", 2),
         data=df_subset,
         legend="full",
         alpha=0.3
