@@ -25,9 +25,7 @@ class ConvNet(torch.nn.Module):
         self.out_channels = out_channels
 
     def forward(self, x):
-        with torch.no_grad():
-            y_pred = self.model(x)
-            return y_pred.argmax(dim=1)
+        return self.model(x)
 
     def regularisation(self, x, metrics, labels, logits):
         cfs = []
@@ -52,11 +50,11 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
         accs.append(acc)
         f1s.append(f1)
 
-        model.model.train()
+        model.train()
         for batch_idx, (data, metrics, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimiser.zero_grad()
-            logits = model.model(data)
+            logits = model(data)
             loss = LOSS_FN(logits, target)
             if do_cf_regularisation:
                 loss += model.regularisation(data, metrics, target, logits)
@@ -73,7 +71,7 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
 
 
 def test_MNIST(model, test_loader):
-    model.model.eval()
+    model.eval()
     test_loss = 0
     correct = 0
     c_matrix = np.zeros((model.out_channels, model.out_channels))
@@ -84,7 +82,7 @@ def test_MNIST(model, test_loader):
         for data, _, target in test_loader:
             data = data.to(device)
             target = target.to(device)
-            output = model.model(data)
+            output = model(data)
             test_loss += LOSS_FN(output, target)
             _, pred = torch.max(output, 1)
             # pred = output.data.max(1, keepdim=True)[1]

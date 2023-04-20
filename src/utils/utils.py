@@ -33,6 +33,8 @@ class Augmentation(Enum):
     BLUR = 4
     SALT_AND_PEPPER_NOISE = 5
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def unbalance_dataset(images, targets, undersampled_classes, cut_percentage):
     # build an array for each class where an element is True
     # if the corresponding image at that index is of the class
@@ -213,39 +215,28 @@ def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_
 
     return accuracies, f1s
 
-def get_embeddings(model_name, data_loader):
-    model = torch.load("../../checkpoints/" + model_name)
+def get_embeddings(model, data_loader):
     model.eval()
-    # Define your output variable that will hold the output
-    out = None
-    # Define a hook function. It sets the global out variable equal to the
-    # output of the layer to which this hook is attached to.
-    def hook(module, input, output):
-        global out
-        out = output
-        return None
-    # Your model layer has a register_forward_hook that does the registering for you
-    model.drop_6.register_forward_hook(hook)
+    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
 
-    # Then you just loop through your dataloader to extract the embeddings
-    embeddings = np.zeros(shape=(0,2048))
+    embeddings = np.zeros(shape=(0, 784))
     labels = np.zeros(shape=(0))
     thicknesses = np.zeros(shape=(0))
     for _, (data, metrics, target) in enumerate(data_loader):
-        # data, target = data.to(device), target.to(device)
-        # global out
-        # x = x.cuda()
-        model(data)
+        data, target = data.to(device), target.to(device)
+        output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
+        s = output.shape
+        output = output.reshape((s[0], 784))
         labels = np.concatenate((labels, target.numpy().ravel()))
-        embeddings = np.concatenate([embeddings, out.detach().cpu().numpy()],axis=0)
+        embeddings = np.concatenate([embeddings, output],axis=0)
         thicknesses = np.concatenate((thicknesses, metrics['thickness']))
 
     return embeddings, thicknesses, labels
 
-def visualise_t_sne(test_loader, model_name, file_name):
-    embeddings, thicknesses, labels = get_embeddings(model_name, test_loader)
+def visualise_t_sne(test_loader, model, file_name):
+    embeddings, thicknesses, labels = get_embeddings(model, test_loader)
     
-    feat_cols = ['pixel'+str(i) for i in range(X.shape[1])]
+    feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)
     df['y'] = labels
     df['label'] = df['y'].apply(lambda i: str(i))
@@ -272,7 +263,7 @@ def visualise_t_sne(test_loader, model_name, file_name):
     plot = sns.scatterplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="y",
-        palette=sns.color_palette("hls", 2),
+        palette=sns.color_palette("hls", 10),
         data=df_subset,
         legend="full",
         alpha=0.3
