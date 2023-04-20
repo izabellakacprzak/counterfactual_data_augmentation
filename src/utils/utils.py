@@ -35,39 +35,6 @@ class Augmentation(Enum):
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def unbalance_dataset(images, targets, undersampled_classes, cut_percentage):
-    # build an array for each class where an element is True
-    # if the corresponding image at that index is of the class
-    idxs = []
-    classes = len(set(targets))
-    for i in range(classes):
-        idxs.append((targets==i))
-
-    # remove elements from classes which are to be undersampled
-    cut_len = int(len(idxs[0]) * cut_percentage)
-    for i in undersampled_classes:
-        idxs[i][:-cut_len] = False
-        # arr[arr==True] = False
-        # idxs[i] = idxs[i][cut_len] + arr
-
-    new_targets = idxs[0]
-    for i in idxs:
-        new_targets = new_targets | i
-
-    return [i for (i, v) in zip(images, new_targets) if v], [i for (i, v) in zip(targets, new_targets) if v]
-
-def get_attr_label_multipliers(tuples):
-    counts = {}
-    for (_, label) in tuples:
-        counts[label] = counts[label] + 1 if (label in counts) else 1
-
-    equal_div = len(tuples) / len(counts)
-    oversample_multipliers = {}
-    for key in counts.keys():
-        oversample_multipliers[key] = int(equal_div / counts[key])
-
-    return oversample_multipliers
-
 def apply_debiasing_method(method, img):
     if method == AugmentationMethod.OVERSAMPLING:
         return img
@@ -145,65 +112,6 @@ def add_noise(image, noise_type="gauss"):
               for i in image.shape]
       out[coords] = 0
       return out
-
-def prepare_med_noisy_mnist(train_data, test_data, bias_conflicting_percentage):
-    train_file_name = MED_TRAIN_FILE+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt"
-    test_file_name = MED_TEST_FILE
-    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
-        print('Med Noisy MNIST dataset already exists')
-        return
-
-    print('Preparing Med Noisy MNIST')
-
-    train_set = []
-    test_set = []
-    l = len(train_data)
-    perc = int(l/(l * bias_conflicting_percentage))
-    # perc = l+1
-    count_bias = 0
-    count_anti = 0
-    for idx, (im, label) in enumerate(train_data):
-        if idx % 10000 == 0:
-            print(f'Converting image {idx}/{len(train_data)}')
-        im_array = np.array(im)
-
-        if idx % perc == 0: # bias-conflicting samples
-            count_anti += 1
-            if random.choice([0, 1]) == 0:
-                noisy_arr = add_noise(im_array, "s&p")
-                train_set.append((Image.fromarray(np.uint8(noisy_arr)), 1, label))
-            else:
-                train_set.append((Image.fromarray(np.uint8(im_array)), 0, label))
-        else: # bias-aligned samples
-            count_bias += 1
-            if label in [0, 1, 2, 3]:
-                noisy_arr = add_noise(im_array, "s&p")
-                train_set.append((Image.fromarray(np.uint8(noisy_arr)), 1, label))
-            else:
-                train_set.append((Image.fromarray(np.uint8(im_array)), 0, label))
-
-    count_sp = 0
-    for idx, (im, label) in enumerate(test_data):
-        if idx % 10000 == 0:
-            print(f'Converting image {idx}/{len(test_data)}')
-        im_array = np.array(im)
-        if random.choice([0, 1]) == 0:
-            count_sp += 1
-            noisy_arr = add_noise(im_array, "s&p")
-            test_set.append((Image.fromarray(np.uint8(noisy_arr)), 1, label))
-        else:
-            test_set.append((Image.fromarray(np.uint8(im_array)), 0, label))
-
-    print("there are this many s&p samples in test set")
-    print(count_sp)
-    print("test set has length")
-    print(len(test_data))
-    print("there are this many bias aligned samples in training set")
-    print(count_bias)
-    print("there are this many bias conflicting samples in training set")
-    print(count_anti)
-    torch.save(train_set, train_file_name)
-    torch.save(test_set, test_file_name)
 
 def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False):
     accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation)
