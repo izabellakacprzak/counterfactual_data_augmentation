@@ -239,6 +239,7 @@ def visualise_t_sne(test_loader, model, file_name):
     feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)
     df['y'] = labels
+    df['thickness'] = thicknesses
     df['label'] = df['y'].apply(lambda i: str(i))
 
     N = 100000
@@ -269,4 +270,16 @@ def visualise_t_sne(test_loader, model, file_name):
         alpha=0.3
     )
     fig = plot.get_figure()
-    fig.savefig(file_name) 
+    fig.savefig(file_name + "_labels.png") 
+
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="thickness",
+        palette=sns.color_palette("hls", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name + "_thickness.png") 

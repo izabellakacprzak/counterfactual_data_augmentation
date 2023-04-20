@@ -40,7 +40,7 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     f1s_arr.append(f1s)
 
     torch.save(model.state_dict(), "../checkpoints/mnist_classifier" + run_name + ".pt")
-    visualise_t_sne(test_loader, model, "plots/"+run_name+"t_sne.png")
+    visualise_t_sne(test_loader, model, "plots/"+run_name+"t_sne")
 
 ############################################################
 # Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
