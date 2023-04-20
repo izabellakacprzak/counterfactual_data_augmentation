@@ -135,7 +135,7 @@ def get_embeddings(model, data_loader):
         output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
         s = output.shape
         output = output.reshape((s[0], 784))
-        labels = np.concatenate((labels, target.numpy().ravel()))
+        labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
         thicknesses = np.concatenate((thicknesses, metrics['thickness']))
 
@@ -147,7 +147,7 @@ def visualise_t_sne(test_loader, model, file_name):
     feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)
     df['y'] = labels
-    df['thickness'] = thicknesses
+    df['thickness'] = thicknesses.astype(int)
     df['label'] = df['y'].apply(lambda i: str(i))
 
     N = 100000

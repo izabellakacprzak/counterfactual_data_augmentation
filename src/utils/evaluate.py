@@ -8,7 +8,7 @@ from scipy import stats
 
 from params import *
 from morphomnist import measure
-from dscm.generate_counterfactuals import generate_counterfactual_for_x
+# from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
