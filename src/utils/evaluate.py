@@ -12,7 +12,7 @@ from morphomnist import measure
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
-    classification_report = get_classification_report(y_pred, y_true, labels)
+    classification_report = metrics.classification_report(y_true, y_pred, digits=len(labels))
 
     print("-------------------------------------")
     print("----------CONFUSION MATRIX-----------")
@@ -33,9 +33,6 @@ def accuracy(confusion_matrix):
 
 def get_confusion_matrix(y_pred, y_true):
     return metrics.confusion_matrix(y_true, y_pred)
-
-def get_classification_report(y_pred, y_true, labels):
-    return metrics.classification_report(y_true, y_pred, digits=len(labels))
 
 def plot_dataset_digits(dataset):
   fig = plt.figure(figsize=(13, 8))
@@ -115,4 +112,23 @@ def classifier_fairness_analysis(model, test_loader):
     X = np.array(X)
     Y = np.array(Y)
     plt.scatter(X,Y)
+    plt.show()
+
+def plot_metrics_comparison(run_names, run_accs):
+    labels = range(10)
+    accuracies = {}
+    for idx in range(len(run_names)):
+        accuracies[run_names[idx]] = run_accs[idx]
+
+    width = 0.5
+    fig, ax = plt.subplots()
+    bottom = np.zeros(3)
+
+    for boolean, accuracy in accuracies.items():
+        p = ax.bar(labels, accuracy, width, label=boolean, bottom=bottom)
+        bottom += accuracy
+
+    ax.set_title("Number of penguins with above average body mass")
+    ax.legend(loc="upper right")
+
     plt.show()
