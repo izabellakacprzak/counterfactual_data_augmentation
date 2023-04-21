@@ -114,21 +114,21 @@ def classifier_fairness_analysis(model, test_loader):
     plt.scatter(X,Y)
     plt.show()
 
-def plot_metrics_comparison(run_names, run_accs):
+def plot_metrics_comparison(run_names, run_metrics, metric_name):
     labels = range(10)
-    accuracies = {}
+    metrics = {}
     for idx in range(len(run_names)):
-        accuracies[run_names[idx]] = run_accs[idx]
+        metrics[run_names[idx]] = run_metrics[idx]
 
     width = 0.5
     fig, ax = plt.subplots()
     bottom = np.zeros(3)
 
-    for boolean, accuracy in accuracies.items():
-        p = ax.bar(labels, accuracy, width, label=boolean, bottom=bottom)
-        bottom += accuracy
+    for boolean, metric in metrics.items():
+        p = ax.bar(labels, metric, width, label=boolean, bottom=bottom)
+        bottom += metric
 
-    ax.set_title("Number of penguins with above average body mass")
+    ax.set_title(metric_name + " comparison")
     ax.legend(loc="upper right")
 
     plt.show()

@@ -23,13 +23,18 @@ def test_pretrained(model_name):
 
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
     report_dict = metrics.classification_report(y_true, y_pred, digits=len(10), output_dict=True)
-    print(report_dict)
+
+    f1s = []
     precisions = []
     recalls = []
-    f1s = []
-    # for digit in range(10):
+    for digit in range(10):
+        f1s.append(report_dict[digit]['f1-score'])
+        precisions.append(report_dict[digit]['precision'])
+        recalls.append(report_dict[digit]['recall'])
 
-    # plot_metrics_comparison(models, )
+    plot_metrics_comparison(models, f1s, 'f1-score')
+    plot_metrics_comparison(models, precisions, 'precision')
+    plot_metrics_comparison(models, recalls, 'recall')
 
 for model in models:
     print("Testing model: " + model)
