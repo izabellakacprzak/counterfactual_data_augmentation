@@ -51,7 +51,7 @@ bias_conflicting_perc = 0.01
 train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
 train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", bias_conflicting_perc)
 train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
-train_and_evaluate_dataset("AUGMENTING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
+train_and_evaluate_dataset("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
 train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
 train_and_evaluate_dataset("CF_REGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
 
