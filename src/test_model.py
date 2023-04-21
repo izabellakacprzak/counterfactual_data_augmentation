@@ -28,6 +28,7 @@ def test_pretrained(model_name):
     precisions = []
     recalls = []
     for digit in range(10):
+        digit = str(digit)
         f1s.append(report_dict[digit]['f1-score'])
         precisions.append(report_dict[digit]['precision'])
         recalls.append(report_dict[digit]['recall'])
