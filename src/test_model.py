@@ -22,7 +22,7 @@ def test_pretrained(model_name):
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
-    report_dict = metrics.classification_report(y_true, y_pred, digits=len(10), output_dict=True)
+    report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
 
     f1s = []
     precisions = []

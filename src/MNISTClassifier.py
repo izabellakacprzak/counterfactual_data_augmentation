@@ -13,7 +13,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class ConvNet(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ConvNet, self).__init__()
-        self.model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V)
+        self.model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V1)
         # change the input size to number of channels
         self.model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=6, stride=2, padding=3, bias=False)
         # change the output size to number of classes
