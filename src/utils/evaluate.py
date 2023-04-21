@@ -115,14 +115,14 @@ def classifier_fairness_analysis(model, test_loader):
     plt.show()
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
-    labels = range(10)
+    labels = range(NUM_OF_CLASSES)
     metrics = {}
     for idx in range(len(run_names)):
         metrics[run_names[idx]] = run_metrics[idx]
 
     width = 0.5
     fig, ax = plt.subplots()
-    bottom = np.zeros(3)
+    bottom = np.zeros(NUM_OF_CLASSES)
 
     for boolean, metric in metrics.items():
         p = ax.bar(labels, metric, width, label=boolean, bottom=bottom)
