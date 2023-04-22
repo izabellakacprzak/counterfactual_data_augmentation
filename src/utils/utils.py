@@ -172,7 +172,7 @@ def visualise_t_sne(test_loader, model, file_name):
     plot = sns.scatterplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="y",
-        palette=sns.color_palette("hls", 10),
+        palette=sns.color_palette("tab10", 10),
         data=df_subset,
         legend="full",
         alpha=0.3

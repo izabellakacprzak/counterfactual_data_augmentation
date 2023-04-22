@@ -6,7 +6,7 @@ import torchvision.transforms as TF
 from utils.evaluate import get_confusion_matrix
 from params import *
 from sklearn.metrics import f1_score
-# from dscm.generate_counterfactuals import generate_counterfactual_for_x
+from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

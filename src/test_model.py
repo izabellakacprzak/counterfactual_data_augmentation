@@ -10,7 +10,7 @@ from utils.evaluate import plot_metrics_comparison
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-models = ["BALANCED", "IMBALANCED", "OVERSAMPLING", "AUGMENTATIONS"]
+models = ["BALANCED", "IMBALANCED", "OVERSAMPLING", "AUGMENTATIONS", "COUNTERFACTUALS"]
 
 def test_pretrained(model_name):
     model = ConvNet(in_channels=1, out_channels=10)
@@ -33,10 +33,19 @@ def test_pretrained(model_name):
         precisions.append(report_dict[digit]['precision'])
         recalls.append(report_dict[digit]['recall'])
 
-    plot_metrics_comparison(models, f1s, 'f1-score')
-    plot_metrics_comparison(models, precisions, 'precision')
-    plot_metrics_comparison(models, recalls, 'recall')
+    return f1s, precisions, recalls
 
+f1s = []
+precisions = []
+recalls = []
 for model in models:
     print("Testing model: " + model)
-    test_pretrained(model)
+    f1, precision, recall = test_pretrained(model)
+    f1s.append(f1)
+    precisions.append(precision)
+    recalls.append(recall)
+
+
+plot_metrics_comparison(models, f1s, 'f1-score')
+plot_metrics_comparison(models, precisions, 'precision')
+plot_metrics_comparison(models, recalls, 'recall')

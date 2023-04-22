@@ -1,5 +1,6 @@
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import random
 from tqdm import tqdm
 import numpy as np
@@ -8,7 +9,7 @@ from scipy import stats
 
 from params import *
 from morphomnist import measure
-# from dscm.generate_counterfactuals import generate_counterfactual_for_x
+from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -115,20 +116,25 @@ def classifier_fairness_analysis(model, test_loader):
     plt.show()
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
-    labels = range(NUM_OF_CLASSES)
+    r = np.arange(NUM_OF_CLASSES)
+    width = 0.2
+    
     metrics = {}
     for idx in range(len(run_names)):
         metrics[run_names[idx]] = run_metrics[idx]
 
-    width = 0.5
-    fig, ax = plt.subplots()
-    bottom = np.zeros(NUM_OF_CLASSES)
-
-    for boolean, metric in metrics.items():
-        p = ax.bar(labels, metric, width, label=boolean, bottom=bottom)
-        bottom += metric
-
-    ax.set_title(metric_name + " comparison")
-    ax.legend(loc="upper right")
-
+    for run, metric in metrics.items():
+        plt.bar(r, metric, width = width, label=run)
+        r = r + width
+    
+    plt.xlabel("Label")
+    plt.ylabel(metric_name)
+    
+    # plt.grid(linestyle='--')
+    plt.xticks(np.arange(NUM_OF_CLASSES) + width/2, np.arange(NUM_OF_CLASSES))
+    plt.yticks(np.arange(0, 1.1, 0.05))
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5))
+    
+    # plt.show()
+    plt.savefig("plots/metrics_comparison_"+metric_name+".png")
     plt.show()
