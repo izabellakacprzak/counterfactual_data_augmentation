@@ -57,6 +57,30 @@ def apply_debiasing_method(method, img):
         img = perturb_image(img, perturbation)
         return img
 
+# TODO: implement
+def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
+    if method == AugmentationMethod.COUNTERFACTUALS:
+        if not os.path.exists(COUNTERFACTUALS_DATA) or not os.path.exists(COUNTERFACTUALS_METRICS):
+            sys.exit("Error: file with counterfactuals does not exist!")
+
+        cfs = pd.read_csv(COUNTERFACTUALS_METRICS, index_col=None).to_dict('records')
+        return train_data + torch.load(COUNTERFACTUALS_DATA)
+
+    # new_data = []
+    # new_metrics = []
+    # for idx, (img, label) in enumerate(train_data):
+    #     if metrics['bias_aligned'] and (label in THICK_CLASSES or label in THIN_CLASSES):
+    #         for _ in range(10):
+    #             new_data.append((apply_debiasing_method(method, img), label))
+    #             new_m = metrics.copy()
+    #             new_m['bias_aligned'] = False
+    #             new_metrics.append(new_m)
+
+    # if method == AugmentationMethod.PERTURBATIONS:
+    #     torch.save(train_data + new_data, "data/mnist_debiased_perturbed.pt")
+
+    # return train_data + new_data, train_metrics + new_metrics
+
 def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLING):
     if (method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and
         os.path.exists("data/mnist_debiased_perturbed_metrics.csv")):
