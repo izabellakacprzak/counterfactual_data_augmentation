@@ -33,7 +33,7 @@ class ConvNet(torch.nn.Module):
             img = x[i][0].float() * 254
             img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
             x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
-            cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float())
+            cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
         
         cfs = torch.stack(cfs)
         logits_cf = self.model(cfs)

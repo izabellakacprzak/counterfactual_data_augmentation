@@ -38,18 +38,18 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
 
-    torch.save(model.state_dict(), "../checkpoints/mnist_classifier" + run_name + ".pt")
-    visualise_t_sne(test_loader, model, "plots/"+run_name+"t_sne")
+    torch.save(model.state_dict(), "../checkpoints/mnist/classifier_" + run_name + ".pt")
+    visualise_t_sne(test_loader, model, "plots/mnist/"+run_name+"t_sne")
 
 ############################################################
 # Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
-# balanced, imbalanced, balanced with oversampling, balanced with standard data augmentations methods
+# unbiased, biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
 bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
-train_and_evaluate_dataset("BALANCED_PERTURBED_MNIST", 1.0)
-train_and_evaluate_dataset("IMBALANCED_PERTURBED_MNIST", bias_conflicting_perc)
+train_and_evaluate_dataset("UNBIASED_PERTURBED_MNIST", 1.0)
+train_and_evaluate_dataset("BIASED_PERTURBED_MNIST", bias_conflicting_perc)
 train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
 train_and_evaluate_dataset("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
 train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
