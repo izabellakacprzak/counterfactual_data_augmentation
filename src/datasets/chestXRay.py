@@ -7,23 +7,6 @@ from utils.utils import *
 from tqdm import tqdm
 from skimage.io import imread
 import torch.nn.functional as F
-from sklearn.model_selection import train_test_split
-
-def norm(batch):
-    for k, v in batch.items():
-        if k == 'x':
-            batch['x'] = (batch['x'].float() - 127.5) / 127.5  # [-1,1]
-        elif k in ['age']:
-            batch[k] = batch[k].float().unsqueeze(-1)
-            batch[k] = batch[k] / 100.
-            batch[k] = batch[k] * 2 - 1  # [-1,1]
-        elif k in ['race']:
-            batch[k] = F.one_hot(batch[k], num_classes=3).squeeze().float()
-        elif k in ['finding']:
-            batch[k] = batch[k].unsqueeze(-1).float()
-        else:
-            batch[k] = batch[k].float().unsqueeze(-1)
-    return batch
 
 class ChestXRay(datasets.VisionDataset):
   def __init__(self, train=True, transform=None, target_transform=None, bias_conflicting_percentage=1, method=AugmentationMethod.NONE):
@@ -78,7 +61,6 @@ class ChestXRay(datasets.VisionDataset):
 
   def __getitem__(self, index):
     sample = {k: v[index] for k, v in self.samples.items()}
-    sample = norm(sample)
 
     image = imread(sample['x']).astype(np.float32)[None, ...]
     metrics = {k: torch.tensor(v) for k, v in sample if (k != 'x' and k != 'finding')}
@@ -89,6 +71,18 @@ class ChestXRay(datasets.VisionDataset):
 
     if self.target_transform is not None:
       target = self.target_transform(target)
+
+    image = (image.float() - 127.5) / 127.5
+
+    for k, v in metrics.items():
+        if k in ['age']:
+            metrics[k] = (metrics[k].float().unsqueeze(-1) / 100.) * 2 - 1
+        elif k in ['race']:
+            metrics[k] = F.one_hot(metrics[k], num_classes=3).squeeze().float()
+        elif k in ['finding']:
+            metrics[k] = metrics[k].unsqueeze(-1).float()
+        else:
+            metrics[k] = metrics[k].float().unsqueeze(-1)
 
     return image, metrics, target
 
