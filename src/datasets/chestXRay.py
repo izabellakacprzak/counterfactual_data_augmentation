@@ -28,13 +28,9 @@ def norm(batch):
 class ChestXRay(datasets.VisionDataset):
   def __init__(self, train=True, transform=None, target_transform=None, bias_conflicting_percentage=1, method=AugmentationMethod.NONE):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
-    metrics_df = pd.read_csv("csv_file")
-
-    train_data, test_data = train_test_split(metrics_df, test_size=0.2)
-    if train:
-       self.data = train_data
-    else:
-       self.data = test_data
+    
+    csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
+    self.data = pd.read_csv(csv_file)
 
     self.transform = transform
     self.labels = [
@@ -62,7 +58,7 @@ class ChestXRay(datasets.VisionDataset):
         'race': [],
     }
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
-        img_path = os.path.join("root", self.data.loc[idx, 'path_preproc'])
+        img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
 
         disease = np.zeros(len(self.labels)-1, dtype=int)
         for i in range(1, len(self.labels)):
