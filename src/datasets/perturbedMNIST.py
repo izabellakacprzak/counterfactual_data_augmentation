@@ -3,11 +3,11 @@ from torchvision import datasets
 import pandas as pd
 
 from params import *
-from utils.utils import *
 
 import sys
 sys.path.append("..")
 
+from utils.utils import *
 from utils.perturbations import prepare_perturbed_mnist
 
 class PerturbedMNIST(datasets.VisionDataset):
