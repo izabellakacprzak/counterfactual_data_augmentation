@@ -20,7 +20,6 @@ def test_pretrained(model_path, dataset, in_channels, out_channels):
 
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
-    print(report_dict)
 
     f1s = []
     precisions = []
@@ -42,7 +41,7 @@ def test_perturbed_mnist():
 
     for model in models:
         # TODO: refactor all prints to have function name calling them
-        print("Testing model: " + model)
+        print("[Test trained]\tTesting model: " + model)
 
         mnist_models_path = "../checkpoints/mnist/classifier_" + model + ".pt"
         test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
@@ -66,8 +65,7 @@ def test_chestxray():
     transforms_list = transforms.Compose([transforms.ToTensor()])
 
     for model in models:
-        # TODO: refactor all prints to have function name calling them
-        print("Testing model: " + model)
+        print("[Test trained]\tTesting model: " + model)
 
         chestray_models_path = "../checkpoints/chestxray/classifier_" + model + ".pt"
         test_dataset = ChestXRay(train=False, transform=transforms_list)

@@ -61,7 +61,7 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
             loss.backward()
             optimiser.step()
             if batch_idx % 10 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                print('[Train loop]\tTrain Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                     100. * batch_idx / len(train_loader), loss.item()))
             # train_losses.append(loss.item())
@@ -98,7 +98,7 @@ def test_MNIST(model, test_loader):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
-    print('\nF1 score: ' + str(f1)+'\n')
-    print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('[Test loop]\tF1 score: ' + str(f1)+'\n')
+    print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, acc, f1

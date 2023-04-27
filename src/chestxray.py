@@ -22,7 +22,7 @@ transforms_list = transforms.Compose([transforms.ToTensor()])
 
 def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
-    print(run_name)
+    print("[ChestXRay train]\t" + run_name)
     train_dataset = ChestXRay(train=True, transform=transforms_list, method=debiasing_method)
     get_attribute_counts_chestxray(train_dataset)
     # print_classes_size(train_dataset)
@@ -58,7 +58,7 @@ train_and_evaluate_dataset("BIASED_CHESTXRAY", 1.0)
 ############################################################
 
 for idx in range(len(runs_arr)):
-    print(runs_arr[idx])
+    print("[ChestXRay train]\t" + runs_arr[idx])
     save_plot_for_metric("Accuracy", accs_arr[idx], runs_arr[idx])
     save_plot_for_metric("F1", f1s_arr[idx], runs_arr[idx])
     # plt.show()

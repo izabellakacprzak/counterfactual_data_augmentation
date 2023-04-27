@@ -49,10 +49,10 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
 
     if os.path.exists(train_file_name) and os.path.exists(test_file_name):
         # os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
-        print('Perturbed MNIST dataset already exists')
+        print('[Perturbed MNIST prep]\tPerturbed MNIST dataset already exists')
         return
 
-    print('Preparing Perturbed MNIST')
+    print('[Perturbed MNIST prep]\tPreparing Perturbed MNIST')
 
     train_set = []
     test_set = []
@@ -96,7 +96,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     curr_idx = 0
     for idx, (im, label) in enumerate(train_data):
         if idx % 1000 == 0:
-            print(f'Converting image {idx}/{len(train_data)}')
+            print(f'[Perturbed MNIST prep]\tConverting image {idx}/{len(train_data)}')
 
         class_counts[label] = (class_counts[label] if label in class_counts else 0) + 1
         # Imbalanding the dataset further by cutting the number of samples of biased classes
@@ -129,12 +129,12 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     save_to_csv(metrics_train_file_name, col_names, train_metrics)
 
     if os.path.exists(test_file_name):
-        print('Perturbed test MNIST dataset already exists')
+        print('[Perturbed MNIST prep]\tPerturbed test MNIST dataset already exists')
         return
     
     for idx, (im, label) in enumerate(test_data):
         if idx % 1000 == 0:
-            print(f'Converting image {idx}/{len(test_data)}')
+            print(f'[Perturbed MNIST prep]\tConverting image {idx}/{len(test_data)}')
         if random.choice([0,1]) == 0:
             thicken(idx, False, im, label, test_set, test_metrics)
         else:

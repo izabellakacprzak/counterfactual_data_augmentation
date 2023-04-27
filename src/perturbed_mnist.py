@@ -22,7 +22,7 @@ transforms_list = transforms.Compose([transforms.ToTensor()])
 
 def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
-    print(run_name)
+    print("[Perturbed MNIST train]\t" + run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
     # print_classes_size(train_dataset)
     # count_thick_thin_per_class(train_dataset.datas)
@@ -58,7 +58,7 @@ train_and_evaluate_dataset("CF_REGULARISATION_PERTURBED_MNIST", bias_conflicting
 ############################################################
 
 for idx in range(len(runs_arr)):
-    print(runs_arr[idx])
+    print("[Perturbed MNIST train]\t" + runs_arr[idx])
     save_plot_for_metric("Accuracy", accs_arr[idx], runs_arr[idx])
     save_plot_for_metric("F1", f1s_arr[idx], runs_arr[idx])
     # plt.show()

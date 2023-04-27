@@ -181,7 +181,7 @@ def visualise_t_sne(test_loader, model, file_name):
     tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
     tsne_pca_results = tsne.fit_transform(pca_result_50)
 
-    print('t-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
+    print('[t-SNE]\tt-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
 
     df_subset['tsne-pca50-one'] = tsne_pca_results[:,0]
     df_subset['tsne-pca50-two'] = tsne_pca_results[:,1]
