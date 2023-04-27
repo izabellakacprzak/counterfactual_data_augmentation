@@ -88,6 +88,36 @@ def count_thick_thin_per_class(dataset):
     print("Thin digits counts:")
     print(thin_per_class)
 
+def get_attribute_counts_chestxray(dataset):
+    positive_counts = {'male':0, 'female':0, 'Black':0, 'White':0, 'Asian':0, '18-25':0, '26-40':0, '41-65':0, '66-100':0}
+    negative_counts = {'male':0, 'female':0, 'Black':0, 'White':0, 'Asian':0, '18-25':0, '26-40':0, '41-65':0, '66-100':0}
+    for _, metrics, label in tqdm(dataset):
+        sex = 'male' if metrics['sex'] == 0 else 'female'
+        race = 'White' if metrics['race'] == 0 else ('Asian' if metrics['race'] == 1 else 'Black')
+        age = metrics['age']
+        if 18 <= age <= 25:
+            age = '18-25'
+        elif 26 <= age <= 40:
+            age = '26-40'
+        elif 41 <= age <= 65:
+            age = '41-65'
+        else:
+            age = '66-100'
+
+        if label == 0:
+            negative_counts[sex] = negative_counts[sex] + 1
+            negative_counts[race] = negative_counts[race] + 1
+            negative_counts[age] = negative_counts[age] + 1
+        else:
+            positive_counts[sex] = positive_counts[sex] + 1
+            positive_counts[race] = positive_counts[race] + 1
+            positive_counts[age] = positive_counts[age] + 1
+
+    print("Disease positive counts:")
+    print(positive_counts)
+    print("Disease negative counts:")
+    print(negative_counts)
+
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
