@@ -70,7 +70,7 @@ def test_chestxray():
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
-        chestray_models_path = "../checkpoints/chestxray/classifier_" + model + "_CHESTXRAY.pt"
+        chestray_models_path = model + "_CHESTXRAY"
         test_dataset = ChestXRay(train=False, transform=transforms_list)
 
         f1, precision, recall = test_pretrained(chestray_models_path, test_dataset, 224, 2)

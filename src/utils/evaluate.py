@@ -12,6 +12,8 @@ from morphomnist import measure
 from dscm.generate_counterfactuals import generate_counterfactual_for_x
 # from chest_xray.generate_counterfactuals import generate_cf
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
     classification_report = metrics.classification_report(y_true, y_pred, digits=len(labels))
@@ -144,6 +146,8 @@ def classifier_fairness_analysis(model, test_loader, run_name):
     model.model.eval()
     fairness_against_digit = 6
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
+        data = data.to(device)
+        labels = labels.to(device)
         logits = model.model(data).cpu()
         probs = torch.nn.functional.softmax(logits, dim=1).tolist()
         original_probs = []
