@@ -65,7 +65,7 @@ class ChestXRay(datasets.VisionDataset):
     sample = {k: v[index] for k, v in self.samples.items()}
 
     image = imread(sample['x']).astype(np.float32)[None, ...]
-    metrics = {k: torch.tensor(v) for k, v in sample.items() if (k != 'x' and k != 'label')}
+    metrics = {k: v for k, v in sample.items() if (k != 'x' and k != 'label')}
     target = sample['label']
 
     if self.transform:
@@ -76,15 +76,15 @@ class ChestXRay(datasets.VisionDataset):
 
     image = (image.float() - 127.5) / 127.5
 
-    for k, v in metrics.items():
-        if k in ['age']:
-            metrics[k] = (metrics[k].float().unsqueeze(-1) / 100.) * 2 - 1
-        elif k in ['race']:
-            metrics[k] = F.one_hot(metrics[k], num_classes=3).squeeze().float()
-        elif k in ['finding']:
-            metrics[k] = metrics[k].unsqueeze(-1).float()
-        else:
-            metrics[k] = metrics[k].float().unsqueeze(-1)
+    # for k, v in metrics.items():
+    #     if k in ['age']:
+    #         metrics[k] = (metrics[k].float().unsqueeze(-1) / 100.) * 2 - 1
+    #     elif k in ['race']:
+    #         metrics[k] = F.one_hot(metrics[k], num_classes=3).squeeze().float()
+    #     elif k in ['finding']:
+    #         metrics[k] = metrics[k].unsqueeze(-1).float()
+    #     else:
+    #         metrics[k] = metrics[k].float().unsqueeze(-1)
 
     return image, metrics, target
 
