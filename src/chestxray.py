@@ -53,7 +53,7 @@ train_and_evaluate_dataset("BIASED_CHESTXRAY", 1.0)
 # train_and_evaluate_dataset("OVERSAMPLING_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
 # train_and_evaluate_dataset("AUGMENTATIONS_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
 # train_and_evaluate_dataset("COUNTERFACTUALS_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
-# train_and_evaluate_dataset("CF_REGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
+# train_and_evaluate_dataset("CFREGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
 
 ############################################################
 

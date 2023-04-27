@@ -9,6 +9,8 @@ from scipy import stats
 
 from params import *
 from morphomnist import measure
+from dscm.generate_counterfactuals import generate_counterfactual_for_x
+# from chest_xray.generate_counterfactuals import generate_cf
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -118,11 +120,25 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\tDisease negative counts:")
     print("[ChestXRay attribute counts]\t"+negative_counts)
 
+def get_cf_for_mnist(img, thickness, intensity, label):
+    img = img.float() * 254
+    img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
+    x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
+    return torch.from_numpy(x_cf).unsqueeze(0).float()
+
+def get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
+    obs = {'x': img,
+           'age': metrics['age'],
+           'race': metrics['race'],
+           'sex': metrics['sex'],
+           'label': label}
+    cf = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
+    return cf
+
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
 def classifier_fairness_analysis(model, test_loader, run_name):
-    from dscm.generate_counterfactuals import generate_counterfactual_for_x
     X, Y = [], []
 
     model.model.eval()
@@ -131,18 +147,21 @@ def classifier_fairness_analysis(model, test_loader, run_name):
         logits = model.model(data).cpu()
         probs = torch.nn.functional.softmax(logits, dim=1).tolist()
         original_probs = []
+
+        # get probabilities for original data
         for idx, prob in enumerate(probs):
             original_probs.append(prob[fairness_against_digit])
         
+        # get probabilities for counterfactual data with interventions on specific attribute
         for _ in range(5):
             X = X + original_probs
 
             cfs = []
             for i in range(len(data)):
-                img = data[i][0].float() * 254
-                img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
-                x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
-                cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float())
+                if "MNIST" in run_name:
+                    cfs.append(get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                else:
+                    cfs.append(get_cf_for_chestxray(data[i][0], metrics[:][i], labels[i], 'male', None, None))
 
             cfs = torch.stack(cfs)
             logits = model.model(cfs).cpu()
@@ -182,5 +201,5 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5))
     
     # plt.show()
-    plt.savefig("plots/metrics_comparison_"+metric_name+".png")
-    plt.show()
+    plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
+    # plt.show()

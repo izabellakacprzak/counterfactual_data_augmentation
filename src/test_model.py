@@ -13,10 +13,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def test_pretrained(model_path, dataset, in_channels, out_channels):
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-    model.load_state_dict(torch.load(model_path, map_location=device))
+    if "MNIST" in model_path:
+        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
+    else:
+        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
+
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    # classifier_fairness_analysis(model, test_loader, model_name)
+    classifier_fairness_analysis(model, test_loader, model_path)
 
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
@@ -33,17 +37,16 @@ def test_pretrained(model_path, dataset, in_channels, out_channels):
     return f1s, precisions, recalls
 
 def test_perturbed_mnist():
-    models = ["UNBIASED_PERTURBED_MNIST", "BIASED_PERTURBED_MNIST", "OVERSAMPLING_PERTURBED_MNIST", "AUGMENTATIONS_PERTURBED_MNIST", "COUNTERFACTUALS_PERTURBED_MNIST", "CF_REGULARISATION_PERTURBED_MNIST"]
+    models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "COUNTERFACTUALS", "CFREGULARISATION"]
     f1s = []
     precisions = []
     recalls = []
     transforms_list = transforms.Compose([transforms.ToTensor()])
 
     for model in models:
-        # TODO: refactor all prints to have function name calling them
         print("[Test trained]\tTesting model: " + model)
 
-        mnist_models_path = "../checkpoints/mnist/classifier_" + model + ".pt"
+        mnist_models_path = model + "_PERTURBED_MNIST"
         test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
         f1, precision, recall = test_pretrained(mnist_models_path, test_dataset, 1, 10)
@@ -53,12 +56,12 @@ def test_perturbed_mnist():
         recalls.append(recall)
 
 
-    plot_metrics_comparison(models, f1s, 'f1-score')
+    plot_metrics_comparison(models, f1s, 'f1score')
     plot_metrics_comparison(models, precisions, 'precision')
     plot_metrics_comparison(models, recalls, 'recall')
 
 def test_chestxray():
-    models = ["BIASED_CHESTXRAY"]
+    models = ["BIASED"]
     f1s = []
     precisions = []
     recalls = []
@@ -67,7 +70,7 @@ def test_chestxray():
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
-        chestray_models_path = "../checkpoints/chestxray/classifier_" + model + ".pt"
+        chestray_models_path = "../checkpoints/chestxray/classifier_" + model + "_CHESTXRAY.pt"
         test_dataset = ChestXRay(train=False, transform=transforms_list)
 
         f1, precision, recall = test_pretrained(chestray_models_path, test_dataset, 224, 2)
@@ -81,4 +84,5 @@ def test_chestxray():
     plot_metrics_comparison(models, precisions, 'precision')
     plot_metrics_comparison(models, recalls, 'recall')
 
+# test_perturbed_mnist()
 test_chestxray()
