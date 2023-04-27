@@ -131,7 +131,8 @@ def classifier_fairness_analysis(model, test_loader, run_name):
     plt.savefig("plots/fairness_correct_"+ run_name +".png")
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
-    r = np.arange(NUM_OF_CLASSES)
+    num_classes = len(run_metrics[0])
+    r = np.arange(num_classes)
     width = 0.1
     
     metrics = {}
@@ -146,7 +147,7 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.ylabel(metric_name)
     
     # plt.grid(linestyle='--')
-    plt.xticks(np.arange(NUM_OF_CLASSES) + width/2, np.arange(NUM_OF_CLASSES))
+    plt.xticks(np.arange(num_classes) + width/2, np.arange(num_classes))
     plt.yticks(np.arange(0, 1.1, 0.05))
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5))
     

@@ -11,8 +11,8 @@ from utils.evaluate import plot_metrics_comparison, classifier_fairness_analysis
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def test_pretrained(dataset, model_path):
-    model = ConvNet(in_channels=1, out_channels=10)
+def test_pretrained(model_path, dataset, in_channels, out_channels):
+    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     model.load_state_dict(torch.load(model_path, map_location=device))
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -25,11 +25,11 @@ def test_pretrained(dataset, model_path):
     f1s = []
     precisions = []
     recalls = []
-    for digit in range(10):
-        digit = str(digit)
-        f1s.append(report_dict[digit]['f1-score'])
-        precisions.append(report_dict[digit]['precision'])
-        recalls.append(report_dict[digit]['recall'])
+    for label in range(out_channels):
+        label = str(label)
+        f1s.append(report_dict[label]['f1-score'])
+        precisions.append(report_dict[label]['precision'])
+        recalls.append(report_dict[label]['recall'])
 
     return f1s, precisions, recalls
 
@@ -47,7 +47,7 @@ def test_perturbed_mnist():
         mnist_models_path = "../checkpoints/mnist/classifier_" + model + ".pt"
         test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
-        f1, precision, recall = test_pretrained(mnist_models_path, test_dataset)
+        f1, precision, recall = test_pretrained(mnist_models_path, test_dataset, 1, 10)
 
         f1s.append(f1)
         precisions.append(precision)
@@ -70,9 +70,9 @@ def test_chestxray():
         print("Testing model: " + model)
 
         chestray_models_path = "../checkpoints/chestxray/classifier_" + model + ".pt"
-        test_dataset = ChestXRay(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
+        test_dataset = ChestXRay(train=False, transform=transforms_list)
 
-        f1, precision, recall = test_pretrained(chestray_models_path, test_dataset)
+        f1, precision, recall = test_pretrained(chestray_models_path, test_dataset, 224, 2)
 
         f1s.append(f1)
         precisions.append(precision)

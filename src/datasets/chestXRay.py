@@ -38,7 +38,7 @@ class ChestXRay(datasets.VisionDataset):
     self.samples = {
         'age': [],
         'sex': [],
-        'finding': [],
+        'label': [],
         'x': [],
         'race': [],
     }
