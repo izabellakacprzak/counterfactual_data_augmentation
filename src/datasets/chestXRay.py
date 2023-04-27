@@ -13,8 +13,10 @@ class ChestXRay(datasets.VisionDataset):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
-    self.data = pd.read_csv(csv_file)
-
+    if train:
+        self.data = pd.read_csv(csv_file).head(70000)
+    else:
+        self.data = pd.read_csv(csv_file).head(10000)
     self.transform = transform
     self.labels = [
         'No Finding',
@@ -63,7 +65,7 @@ class ChestXRay(datasets.VisionDataset):
     sample = {k: v[index] for k, v in self.samples.items()}
 
     image = imread(sample['x']).astype(np.float32)[None, ...]
-    metrics = {k: torch.tensor(v) for k, v in sample if (k != 'x' and k != 'finding')}
+    metrics = {k: torch.tensor(v) for k, v in sample.items() if (k != 'x' and k != 'finding')}
     target = sample['finding']
 
     if self.transform:
