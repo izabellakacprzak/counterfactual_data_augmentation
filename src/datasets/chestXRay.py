@@ -9,7 +9,7 @@ from skimage.io import imread
 import torch.nn.functional as F
 
 class ChestXRay(datasets.VisionDataset):
-  def __init__(self, train=True, transform=None, target_transform=None, bias_conflicting_percentage=1, method=AugmentationMethod.NONE):
+  def __init__(self, train=True, transform=None, target_transform=None, method=AugmentationMethod.NONE):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
@@ -51,7 +51,7 @@ class ChestXRay(datasets.VisionDataset):
         finding = 0 if disease.sum() == 0 else 1
 
         self.samples['x'].append(img_path)
-        self.samples['finding'].append(finding)
+        self.samples['label'].append(finding)
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
@@ -63,8 +63,8 @@ class ChestXRay(datasets.VisionDataset):
     sample = {k: v[index] for k, v in self.samples.items()}
 
     image = imread(sample['x']).astype(np.float32)[None, ...]
-    metrics = {k: torch.tensor(v) for k, v in sample if (k != 'x' and k != 'finding')}
-    target = sample['finding']
+    metrics = {k: torch.tensor(v) for k, v in sample.items() if (k != 'x' and k != 'label')}
+    target = sample['label']
 
     if self.transform:
         image = self.transform(image)

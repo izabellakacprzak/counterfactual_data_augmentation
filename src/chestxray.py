@@ -20,14 +20,14 @@ out_channels = 10
 
 transforms_list = transforms.Compose([transforms.ToTensor()])
 
-def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_method=AugmentationMethod.NONE):
+def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
     print(run_name)
-    train_dataset = ChestXRay(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
+    train_dataset = ChestXRay(train=True, transform=transforms_list, method=debiasing_method)
     # print_classes_size(train_dataset)
     # count_thick_thin_per_class(train_dataset.datas)
     # plot_dataset_digits(train_dataset)
-    test_dataset = ChestXRay(train=False, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc)
+    test_dataset = ChestXRay(train=False, transform=transforms_list)
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -46,14 +46,13 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 # unbiased, biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
 # train_and_evaluate_dataset("UNBIASED_CHESTXRAY", 1.0)
 train_and_evaluate_dataset("BIASED_CHESTXRAY", 1.0)
-train_and_evaluate_dataset("OVERSAMPLING_CHESTXRAY", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
-train_and_evaluate_dataset("AUGMENTATIONS_CHESTXRAY", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
-train_and_evaluate_dataset("COUNTERFACTUALS_CHESTXRAY", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
-train_and_evaluate_dataset("CF_REGULARISATION_CHESTXRAY", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
+# train_and_evaluate_dataset("OVERSAMPLING_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
+# train_and_evaluate_dataset("AUGMENTATIONS_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
+# train_and_evaluate_dataset("COUNTERFACTUALS_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
+# train_and_evaluate_dataset("CF_REGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
 
 ############################################################
 
