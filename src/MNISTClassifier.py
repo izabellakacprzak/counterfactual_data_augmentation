@@ -3,6 +3,7 @@ import torch.nn as nn
 from torchvision.models import resnet152, ResNet152_Weights
 import torchvision.transforms as TF
 
+from utils.utils import mixup_data
 from utils.evaluate import get_confusion_matrix
 from params import *
 from sklearn.metrics import f1_score
@@ -40,7 +41,7 @@ class ConvNet(torch.nn.Module):
         return LAMBDA * MSE(logits, logits_cf)
 
 
-def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
+def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False, do_mixup=False):
     accs = []
     f1s = []
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -54,10 +55,17 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False):
         for batch_idx, (data, metrics, target) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimiser.zero_grad()
-            logits = model(data)
-            loss = LOSS_FN(logits, target)
-            if do_cf_regularisation:
-                loss += model.regularisation(data, metrics, target, logits)
+
+            if do_mixup:
+                data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device("cuda:0"))
+                logits = model(data)
+                loss = lam * LOSS_FN(logits, targets_a) + (1 - lam) * LOSS_FN(logits, targets_b)
+            else:
+                logits = model(data)    
+                loss = LOSS_FN(logits, target)
+                if do_cf_regularisation:
+                    loss += model.regularisation(data, metrics, target, logits)
+
             loss.backward()
             optimiser.step()
             if batch_idx % 10 == 0:
@@ -102,3 +110,13 @@ def test_MNIST(model, test_loader):
     print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, acc, f1
+
+def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False, do_mixup=False):
+    accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
+    y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
+    accuracies.append(acc)
+    f1s.append(f1)
+    pred_arr.append(y_pred)
+    true_arr.append(y_true)
+
+    return accuracies, f1s

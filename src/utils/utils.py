@@ -12,7 +12,6 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from MNISTClassifier import train_MNIST, test_MNIST
 from params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
@@ -25,6 +24,7 @@ class AugmentationMethod(Enum):
     PERTURBATIONS = 5
     COUNTERFACTUALS = 6
     CF_REGULARISATION = 7
+    MIXUP = 8
 
 class Augmentation(Enum):
     ROTATION = 1
@@ -131,16 +131,6 @@ def add_noise(image, noise_type="gauss"):
       out[coords] = 0
       return out
 
-def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False):
-    accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation)
-    y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
-    accuracies.append(acc)
-    f1s.append(f1)
-    pred_arr.append(y_pred)
-    true_arr.append(y_true)
-
-    return accuracies, f1s
-
 def get_embeddings(model, data_loader):
     model.eval()
     feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
@@ -209,3 +199,21 @@ def visualise_t_sne(test_loader, model, file_name):
     )
     fig = plot.get_figure()
     fig.savefig(file_name + "_thickness.png") 
+
+# taken from https://github.com/facebookresearch/mixup-cifar10/blob/main/train.py
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    '''Returns mixed inputs, pairs of targets, and lambda'''
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam

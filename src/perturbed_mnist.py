@@ -3,11 +3,11 @@ from torchvision import transforms
 from matplotlib import pyplot as plt
 import numpy as np
 from datasets.perturbedMNIST import PerturbedMNIST
-from MNISTClassifier import ConvNet
+from MNISTClassifier import ConvNet, train_and_evaluate
 
 from params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric
-from utils.utils import AugmentationMethod, train_and_evaluate, visualise_t_sne
+from utils.utils import AugmentationMethod
 
 pred_arr = []
 true_arr = []
@@ -34,7 +34,9 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
 
-    accuracies, f1s = train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, debiasing_method==AugmentationMethod.CF_REGULARISATION)
+    do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
+    do_mixup = debiasing_method==AugmentationMethod.MIXUP
+    accuracies, f1s = train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
 
@@ -48,12 +50,13 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 
 bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
-train_and_evaluate_dataset("UNBIASED_PERTURBED_MNIST", 1.0)
-train_and_evaluate_dataset("BIASED_PERTURBED_MNIST", bias_conflicting_perc)
-train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
-train_and_evaluate_dataset("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
-train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
-train_and_evaluate_dataset("CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
+# train_and_evaluate_dataset("UNBIASED_PERTURBED_MNIST", 1.0)
+# train_and_evaluate_dataset("BIASED_PERTURBED_MNIST", bias_conflicting_perc)
+# train_and_evaluate_dataset("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
+# train_and_evaluate_dataset("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
+# train_and_evaluate_dataset("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
+# train_and_evaluate_dataset("CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
+train_and_evaluate_dataset("MIXUP_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.MIXUP)
 
 ############################################################
 

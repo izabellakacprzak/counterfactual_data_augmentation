@@ -20,7 +20,7 @@ class PerturbedMNIST(datasets.VisionDataset):
       self.data = torch.load("data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt")
       self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
       
-      if method != AugmentationMethod.NONE and method != AugmentationMethod.CF_REGULARISATION:
+      if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
         self.data, self.metrics = debias_mnist(train_data=self.data, train_metrics=self.metrics, method=method)
       
     else:
