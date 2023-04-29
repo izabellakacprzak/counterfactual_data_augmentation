@@ -30,9 +30,9 @@ class ChestXRay(datasets.VisionDataset):
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
     if train:
-        self.data = pd.read_csv(csv_file).head(70000)
+        self.data = pd.read_csv(csv_file).head(1000)
     else:
-        self.data = pd.read_csv(csv_file).head(10000)
+        self.data = pd.read_csv(csv_file).head(100)
     self.transform = transform
     self.labels = [
         'No Finding',
@@ -90,9 +90,6 @@ class ChestXRay(datasets.VisionDataset):
         sample['x'] = self.transform(sample['x'])
 
     sample = norm(sample)
-    # print(f'sample: {sample}')
-    if self.concat_pa:
-        sample['pa'] = torch.cat([sample[k] for k in self.columns], dim=0)
 
     metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
     return sample['x'], metrics, sample['finding']
