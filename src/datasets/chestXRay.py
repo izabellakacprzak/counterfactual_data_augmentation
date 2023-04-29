@@ -38,7 +38,7 @@ class ChestXRay(datasets.VisionDataset):
     self.samples = {
         'age': [],
         'sex': [],
-        'label': [],
+        'finding': [],
         'x': [],
         'race': [],
     }
@@ -53,7 +53,7 @@ class ChestXRay(datasets.VisionDataset):
         finding = 0 if disease.sum() == 0 else 1
 
         self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
-        self.samples['label'].append(finding)
+        self.samples['finding'].append(finding)
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
@@ -65,8 +65,8 @@ class ChestXRay(datasets.VisionDataset):
   def __getitem__(self, index):
     sample = {k: v[index] for k, v in self.samples.items()}
 
-    metrics = {k: v for k, v in sample.items() if (k != 'x' and k != 'label')}
-    target = sample['label']
+    metrics = {k: v for k, v in sample.items() if (k != 'x' and k != 'finding')}
+    target = sample['finding']
 
     if self.transform:
         image = self.transform(sample['x'])

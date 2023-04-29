@@ -17,7 +17,6 @@ from torch.utils.data import DataLoader
 from params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
-from dscmchest.generate_counterfactuals import generate_cfs
  
 class AugmentationMethod(Enum):
     NONE = 1
@@ -62,6 +61,7 @@ def apply_debiasing_method(method, img):
         return img
 
 def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
+    from dscmchest.generate_counterfactuals import generate_cfs
     if method == AugmentationMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
             cf_data, cf_metrics = generate_cfs(train_data, do_r=2)
@@ -80,7 +80,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
         samples = []
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]
-            new_sample = {'x':img, 'label':metrics['label'], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race']}
+            new_sample = {'x':img, 'finding':metrics['finding'], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race']}
             samples.append(new_sample)
 
         return samples
@@ -93,7 +93,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
             for _ in range(10):
                 new_datapoint = metrics.copy()
                 new_datapoint['x'] = apply_debiasing_method(method, img)
-                new_datapoint['label'] = label
+                new_datapoint['finding'] = label
 
     return new_data
 

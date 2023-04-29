@@ -133,7 +133,7 @@ def get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
            'age': metrics['age'],
            'race': metrics['race'],
            'sex': metrics['sex'],
-           'label': label}
+           'finding': label}
     cf = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
     return cf
 
@@ -205,5 +205,6 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
     
     # plt.show()
+    fig = plt.figure(metric_name)
     plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
     # plt.show()
