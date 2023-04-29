@@ -8,6 +8,22 @@ from tqdm import tqdm
 from skimage.io import imread
 import torch.nn.functional as F
 
+def norm(batch):
+    for k, v in batch.items():
+        if k == 'x':
+            batch['x'] = (batch['x'].float() - 127.5) / 127.5  # [-1,1]
+        elif k in ['age']:
+            batch[k] = batch[k].float().unsqueeze(-1)
+            batch[k] = batch[k] / 100.
+            batch[k] = batch[k] * 2 - 1  # [-1,1]
+        elif k in ['race']:
+            batch[k] = F.one_hot(batch[k], num_classes=3).squeeze().float()
+        elif k in ['finding']:
+            batch[k] = batch[k].unsqueeze(-1).float()
+        else:
+            batch[k] = batch[k].float().unsqueeze(-1)
+    return batch
+
 class ChestXRay(datasets.VisionDataset):
   def __init__(self, train=True, transform=None, target_transform=None, method=AugmentationMethod.NONE):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
@@ -52,7 +68,7 @@ class ChestXRay(datasets.VisionDataset):
 
         finding = 0 if disease.sum() == 0 else 1
 
-        self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
+        self.samples['x'].append(img_path)
         self.samples['finding'].append(finding)
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
@@ -61,19 +77,25 @@ class ChestXRay(datasets.VisionDataset):
   def debias(self, method):
     self.samples = debias_chestxray(self, method)
      
-  def __getitem__(self, index):
-    sample = {k: v[index] for k, v in self.samples.items()}
+  def __getitem__(self, idx):
+    sample = {k: v[idx] for k, v in self.samples.items()}
 
-    metrics = {k: v for k, v in sample.items() if (k != 'x' and k != 'finding')}
-    target = sample['finding']
+    # print(f'sample before: {sample}')
+    sample['x'] = imread(sample['x']).astype(np.float32)[None, ...]
+
+    for k, v in sample.items():
+        sample[k] = torch.tensor(v)
 
     if self.transform:
-        image = self.transform(sample['x'])
+        sample['x'] = self.transform(sample['x'])
 
-    if self.target_transform is not None:
-      target = self.target_transform(target)
+    sample = norm(sample)
+    # print(f'sample: {sample}')
+    if self.concat_pa:
+        sample['pa'] = torch.cat([sample[k] for k in self.columns], dim=0)
 
-    return image, metrics, target
+    metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
+    return sample['x'], metrics, sample['finding']
 
   def __len__(self):
     return len(self.samples)

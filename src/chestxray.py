@@ -18,7 +18,7 @@ f1s_arr = []
 in_channels = 224
 out_channels = 2
 
-transforms_list = transforms.Compose([transforms.ToTensor()])
+transforms_list = transforms.Compose([transforms.Resize((64,64)),])
 
 def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
