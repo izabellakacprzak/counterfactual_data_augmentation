@@ -57,11 +57,10 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
-      
-    if method != AugmentationMethod.NONE and method != AugmentationMethod.CF_REGULARISATION:
-        self.samples = debias_chestxray(train_data=self.samples, method=method)
 
-
+  def debias(self, method):
+    self.samples = debias_chestxray(self, method)
+     
   def __getitem__(self, index):
     sample = {k: v[index] for k, v in self.samples.items()}
 
@@ -73,18 +72,6 @@ class ChestXRay(datasets.VisionDataset):
 
     if self.target_transform is not None:
       target = self.target_transform(target)
-
-    image = (image.float() - 127.5) / 127.5
-
-    # for k, v in metrics.items():
-    #     if k in ['age']:
-    #         metrics[k] = (metrics[k].float().unsqueeze(-1) / 100.) * 2 - 1
-    #     elif k in ['race']:
-    #         metrics[k] = F.one_hot(metrics[k], num_classes=3).squeeze().float()
-    #     elif k in ['finding']:
-    #         metrics[k] = metrics[k].unsqueeze(-1).float()
-    #     else:
-    #         metrics[k] = metrics[k].float().unsqueeze(-1)
 
     return image, metrics, target
 

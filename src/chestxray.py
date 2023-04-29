@@ -24,6 +24,8 @@ def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NON
     runs_arr.append(run_name)
     print("[ChestXRay train]\t" + run_name)
     train_dataset = ChestXRay(train=True, transform=transforms_list, method=debiasing_method)
+    if debiasing_method != AugmentationMethod.NONE and debiasing_method != AugmentationMethod.CF_REGULARISATION:
+        train_dataset.debias(method=debiasing_method)
     # get_attribute_counts_chestxray(train_dataset)
     # print_classes_size(train_dataset)
     # count_thick_thin_per_class(train_dataset.datas)
