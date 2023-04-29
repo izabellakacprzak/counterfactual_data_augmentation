@@ -24,7 +24,7 @@ def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NON
     runs_arr.append(run_name)
     print("[ChestXRay train]\t" + run_name)
     train_dataset = ChestXRay(train=True, transform=transforms_list, method=debiasing_method)
-    get_attribute_counts_chestxray(train_dataset)
+    # get_attribute_counts_chestxray(train_dataset)
     # print_classes_size(train_dataset)
     # count_thick_thin_per_class(train_dataset.datas)
     # plot_dataset_digits(train_dataset)
@@ -51,10 +51,10 @@ def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NON
 
 # plot_dataset_digits(train_dataset)
 # train_and_evaluate_dataset("UNBIASED_CHESTXRAY", 1.0)
-train_and_evaluate_dataset("BIASED_CHESTXRAY", 1.0)
+# train_and_evaluate_dataset("BIASED_CHESTXRAY", 1.0)
 # train_and_evaluate_dataset("OVERSAMPLING_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
 # train_and_evaluate_dataset("AUGMENTATIONS_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
-# train_and_evaluate_dataset("COUNTERFACTUALS_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
+train_and_evaluate_dataset("COUNTERFACTUALS_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
 # train_and_evaluate_dataset("CFREGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
 
 ############################################################

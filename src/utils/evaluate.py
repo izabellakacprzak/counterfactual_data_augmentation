@@ -9,8 +9,6 @@ from scipy import stats
 
 from params import *
 from morphomnist import measure
-from dscm.generate_counterfactuals import generate_counterfactual_for_x
-# from chest_xray.generate_counterfactuals import generate_cf
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -123,12 +121,14 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\t"+negative_counts)
 
 def get_cf_for_mnist(img, thickness, intensity, label):
+    from dscm.generate_counterfactuals import generate_counterfactual_for_x
     img = img.float() * 254
     img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
     x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
     return torch.from_numpy(x_cf).unsqueeze(0).float()
 
 def get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
+    from chest_xray.generate_counterfactuals import generate_cf
     obs = {'x': img,
            'age': metrics['age'],
            'race': metrics['race'],
@@ -202,7 +202,7 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     # plt.grid(linestyle='--')
     plt.xticks(np.arange(num_classes) + width/2, np.arange(num_classes))
     plt.yticks(np.arange(0, 1.1, 0.05))
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.5))
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
     
     # plt.show()
     plt.savefig("plots/metrics_comparison_"+ metric_name +".png")

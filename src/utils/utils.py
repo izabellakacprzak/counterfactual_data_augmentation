@@ -3,6 +3,7 @@ import numpy as np
 import random
 import os
 import sys
+import csv
 import pandas as pd
 from PIL import Image
 import torch
@@ -11,10 +12,12 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
 
 from params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
+from dscmchest.generate_counterfactuals import generate_cfs
  
 class AugmentationMethod(Enum):
     NONE = 1
@@ -60,10 +63,29 @@ def apply_debiasing_method(method, img):
 
 def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
     if method == AugmentationMethod.COUNTERFACTUALS:
-        if not os.path.exists(COUNTERFACTUALS_DATA) or not os.path.exists(COUNTERFACTUALS_METRICS):
-            sys.exit("Error: file with counterfactuals does not exist!")
-        return train_data + torch.load(COUNTERFACTUALS_DATA)
+        if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
+            cf_data, cf_metrics = generate_cfs(train_data, do_r='asian')
 
+            # Save cf files
+            torch.save(cf_data, CF_CHEST_DATA)
+            keys = cf_metrics[0].keys()
+            with open(CF_CHEST_METRICS, 'x', newline='') as output_file:
+                dict_writer = csv.DictWriter(output_file, keys)
+                dict_writer.writeheader()
+                dict_writer.writerows(cf_metrics)
+
+        else:
+            cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col='index')
+        
+        samples = []
+        for idx, img in enumerate(cf_data):
+            metrics = cf_metrics[idx]
+            new_sample = {'x':img, 'label':metrics['label'], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race']}
+            samples.append(new_sample)
+
+        return samples
+
+    # TODO: IMPLEMENT!!!
     new_data = []
     for _, (img, metrics, label) in enumerate(train_data):
         # TODO: add condition when biased sample - do analysis of data
@@ -73,7 +95,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
                 new_datapoint['x'] = apply_debiasing_method(method, img)
                 new_datapoint['label'] = label
 
-    return train_data + new_data
+    return new_data
 
 def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLING):
     if (method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and

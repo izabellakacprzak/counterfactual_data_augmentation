@@ -20,7 +20,7 @@ def test_pretrained(model_path, dataset, in_channels, out_channels):
 
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    classifier_fairness_analysis(model, test_loader, model_path)
+    # classifier_fairness_analysis(model, test_loader, model_path)
 
     y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
@@ -37,7 +37,7 @@ def test_pretrained(model_path, dataset, in_channels, out_channels):
     return f1s, precisions, recalls
 
 def test_perturbed_mnist():
-    models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "COUNTERFACTUALS", "CFREGULARISATION"]
+    models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
     f1s = []
     precisions = []
     recalls = []
@@ -84,5 +84,5 @@ def test_chestxray():
     plot_metrics_comparison(models, precisions, 'precision')
     plot_metrics_comparison(models, recalls, 'recall')
 
-# test_perturbed_mnist()
-test_chestxray()
+test_perturbed_mnist()
+# test_chestxray()

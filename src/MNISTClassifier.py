@@ -7,7 +7,6 @@ from utils.utils import mixup_data
 from utils.evaluate import get_confusion_matrix
 from params import *
 from sklearn.metrics import f1_score
-from dscm.generate_counterfactuals import generate_counterfactual_for_x
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -29,6 +28,7 @@ class ConvNet(torch.nn.Module):
         return self.model(x)
 
     def regularisation(self, x, metrics, labels, logits):
+        from dscm.generate_counterfactuals import generate_counterfactual_for_x
         cfs = []
         for i in range(len(x)):
             img = x[i][0].float() * 254
@@ -106,7 +106,7 @@ def test_MNIST(model, test_loader):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
-    print('[Test loop]\tF1 score: ' + str(f1)+'\n')
+    print('[Test loop]\tF1 score: ' + str(f1))
     print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, acc, f1

@@ -52,24 +52,24 @@ class ChestXRay(datasets.VisionDataset):
 
         finding = 0 if disease.sum() == 0 else 1
 
-        self.samples['x'].append(img_path)
+        self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['label'].append(finding)
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
       
     if method != AugmentationMethod.NONE and method != AugmentationMethod.CF_REGULARISATION:
-        self.data, self.metrics = debias_chestxray(train_data=self.samples, method=method)
+        self.samples = debias_chestxray(train_data=self.samples, method=method)
+
 
   def __getitem__(self, index):
     sample = {k: v[index] for k, v in self.samples.items()}
 
-    image = imread(sample['x']).astype(np.float32)[None, ...]
     metrics = {k: v for k, v in sample.items() if (k != 'x' and k != 'label')}
     target = sample['label']
 
     if self.transform:
-        image = self.transform(image)
+        image = self.transform(sample['x'])
 
     if self.target_transform is not None:
       target = self.target_transform(target)
@@ -89,4 +89,4 @@ class ChestXRay(datasets.VisionDataset):
     return image, metrics, target
 
   def __len__(self):
-    return len(self.data)
+    return len(self.samples)
