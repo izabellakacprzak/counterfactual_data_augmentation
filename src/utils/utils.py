@@ -64,7 +64,7 @@ def apply_debiasing_method(method, img):
 def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
     if method == AugmentationMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = generate_cfs(train_data, do_r='asian')
+            cf_data, cf_metrics = generate_cfs(train_data, do_r=2)
 
             # Save cf files
             torch.save(cf_data, CF_CHEST_DATA)
