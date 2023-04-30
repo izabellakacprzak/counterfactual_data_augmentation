@@ -19,5 +19,5 @@ def visualise(models):
         test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
         visualise_t_sne(test_loader, model, "plots/"+model_name+"t_sne")
 
-models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "COUNTERFACTUALS", "CFREGULARISATION"]
+models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
 visualise(models)

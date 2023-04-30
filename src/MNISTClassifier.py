@@ -47,7 +47,7 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False, do
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     for epoch in range(1, EPOCHS):
-        _, _, acc, f1 = test_MNIST(model, test_loader)
+        _, _, _, acc, f1 = test_MNIST(model, test_loader)
         accs.append(acc)
         f1s.append(f1)
 
@@ -86,8 +86,9 @@ def test_MNIST(model, test_loader):
     precision = np.zeros(model.out_channels)
     y_true = []
     y_pred = []
+    attr_true = []
     with torch.no_grad():
-        for data, _, target in test_loader:
+        for data, metrics, target in test_loader:
             data = data.to(device)
             target = target.to(device)
             output = model(data)
@@ -98,10 +99,13 @@ def test_MNIST(model, test_loader):
 
             y_true += target.tolist()
             y_pred += pred.cpu().numpy().tolist()
+            metrics = list(map(lambda x: x.tolist(), list(metrics.values())))
+            attr_true = metrics if len(attr_true)==0 else [m+n for m,n in zip(attr_true, metrics)]
             # y_pred += pred.numpy().T[0].tolist()
     test_loss /= len(test_loader.dataset)
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)
+    attr_true = np.asarray(attr_true)
     # test_losses.append(test_loss)
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
     acc = 100. * correct / len(test_loader.dataset)
@@ -109,11 +113,11 @@ def test_MNIST(model, test_loader):
     print('[Test loop]\tF1 score: ' + str(f1))
     print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
-    return y_pred, y_true, acc, f1
+    return y_pred, y_true, attr_true, acc, f1
 
 def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False, do_mixup=False):
     accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
-    y_pred, y_true, acc, f1 = test_MNIST(model, test_loader)
+    y_pred, y_true, _, acc, f1 = test_MNIST(model, test_loader)
     accuracies.append(acc)
     f1s.append(f1)
     pred_arr.append(y_pred)
