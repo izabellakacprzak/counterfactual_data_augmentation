@@ -184,6 +184,7 @@ def classifier_fairness_analysis(model, test_loader, run_name):
     plt.savefig("plots/fairness_correct_"+ run_name +".png")
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
+    fig = plt.figure(metric_name)
     num_classes = len(run_metrics[0])
     r = np.arange(num_classes)
     width = 0.1
@@ -205,6 +206,28 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
     
     # plt.show()
-    fig = plt.figure(metric_name)
     plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
     # plt.show()
+
+def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
+    for idx, attribute in enumerate(attributes):
+        if attribute == 'thickness':
+            continue
+        
+        attr_values = metrics_true[idx]
+        unique_attr_values = set(attr_values)
+
+        # Accuracy per attribute value
+        unique_counts = {u:0 for u in unique_attr_values}
+        unique_correct_counts = {u:0 for u in unique_attr_values}
+
+        for idx, t in enumerate(y_true):
+            p = y_pred[idx]
+            unique_counts[attr_values[idx]] = unique_counts[attr_values[idx]] + 1
+            if p == t:
+                unique_correct_counts[attr_values[idx]] = unique_correct_counts[attr_values[idx]] + 1
+
+        print("Accuracy for " + str(attribute))
+        for av in unique_attr_values:
+            acc = str(unique_correct_counts[av] / unique_counts[av])
+            print("Accuracy value for {}: {}".format(av, acc))
