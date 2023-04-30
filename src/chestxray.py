@@ -15,10 +15,10 @@ runs_arr = []
 accs_arr = []
 f1s_arr = []
 
-in_channels = 224
+in_channels = 1
 out_channels = 2
 
-transforms_list = transforms.Compose([transforms.Resize((64,64)),])
+transforms_list = transforms.Compose([transforms.Resize((192,192)),])
 
 def train_and_evaluate_dataset(run_name, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)

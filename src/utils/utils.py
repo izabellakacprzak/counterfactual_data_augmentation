@@ -64,7 +64,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
     from dscmchest.generate_counterfactuals import generate_cfs
     if method == AugmentationMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = generate_cfs(train_data, do_r=2)
+            cf_data, cf_metrics = generate_cfs(train_data, do_s=1)
 
             # Save cf files
             torch.save(cf_data, CF_CHEST_DATA)
@@ -75,13 +75,22 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
                 dict_writer.writerows(cf_metrics)
 
         else:
-            cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col='index')
+            cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
         
-        samples = []
+        samples = {
+            'age': [],
+            'sex': [],
+            'finding': [],
+            'x': [],
+            'race': [],
+        }
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]
-            new_sample = {'x':img, 'finding':metrics['finding'], 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race']}
-            samples.append(new_sample)
+            samples['age'].append(metrics['age'])
+            samples['sex'].append(metrics['sex'])
+            samples['finding'].append(metrics['finding'])
+            samples['x'].append(img)
+            samples['race'].append(metrics['race'])
 
         return samples
 

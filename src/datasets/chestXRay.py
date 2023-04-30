@@ -30,7 +30,7 @@ class ChestXRay(datasets.VisionDataset):
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
     if train:
-        self.data = pd.read_csv(csv_file).head(1000)
+        self.data = pd.read_csv(csv_file).head(100)
     else:
         self.data = pd.read_csv(csv_file).head(100)
     self.transform = transform
@@ -67,32 +67,36 @@ class ChestXRay(datasets.VisionDataset):
                                     self.labels[i]] == 1)
 
         finding = 0 if disease.sum() == 0 else 1
-
-        self.samples['x'].append(img_path)
+        
+        self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['finding'].append(finding)
         self.samples['age'].append(self.data.loc[idx, 'age'])
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
 
   def debias(self, method):
-    self.samples = debias_chestxray(self, method)
-     
+    print(type(self.samples['x'][0]))
+    new_samples = debias_chestxray(self, method)
+    print(type(new_samples['x'][0]))
+    self.samples['x'] += new_samples['x']
+    self.samples['finding'] += new_samples['finding']
+    self.samples['age'] += new_samples['age']
+    self.samples['race'] += new_samples['race']
+    self.samples['sex'] += new_samples['sex']
+
   def __getitem__(self, idx):
     sample = {k: v[idx] for k, v in self.samples.items()}
 
     # print(f'sample before: {sample}')
-    sample['x'] = imread(sample['x']).astype(np.float32)[None, ...]
 
     for k, v in sample.items():
         sample[k] = torch.tensor(v)
 
-    if self.transform:
-        sample['x'] = self.transform(sample['x'])
+    #sample = norm(sample)
 
-    sample = norm(sample)
-
+    samle['x'] = imread(sample['x']).astype(np.float32)[None, ...]
     metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
     return sample['x'], metrics, sample['finding']
 
   def __len__(self):
-    return len(self.samples)
+    return len(self.samples['x'])
