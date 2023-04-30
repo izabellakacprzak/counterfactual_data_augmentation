@@ -30,9 +30,9 @@ class ChestXRay(datasets.VisionDataset):
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
     if train:
-        self.data = pd.read_csv(csv_file).head(100)
+        self.data = pd.read_csv(csv_file)
     else:
-        self.data = pd.read_csv(csv_file).head(100)
+        self.data = pd.read_csv(csv_file)
     self.transform = transform
     self.labels = [
         'No Finding',
@@ -75,9 +75,7 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
 
   def debias(self, method):
-    print(type(self.samples['x'][0]))
     new_samples = debias_chestxray(self, method)
-    print(type(new_samples['x'][0]))
     self.samples['x'] += new_samples['x']
     self.samples['finding'] += new_samples['finding']
     self.samples['age'] += new_samples['age']
@@ -93,6 +91,8 @@ class ChestXRay(datasets.VisionDataset):
         sample[k] = torch.tensor(v)
 
     #sample = norm(sample)
+    if self.transform:
+        sample['x'] = self.transform(sample['x'])
 
     metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
     return sample['x'], metrics, sample['finding']
