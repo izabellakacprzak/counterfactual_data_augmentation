@@ -94,7 +94,6 @@ class ChestXRay(datasets.VisionDataset):
 
     #sample = norm(sample)
 
-    samle['x'] = imread(sample['x']).astype(np.float32)[None, ...]
     metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
     return sample['x'], metrics, sample['finding']
 
