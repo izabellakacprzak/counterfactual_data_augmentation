@@ -40,50 +40,34 @@ class ConvNet(torch.nn.Module):
         logits_cf = self.model(cfs)
         return LAMBDA * MSE(logits, logits_cf)
 
+def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do_cf_regularisation=False):
+    model.train()
+    for batch_idx, (data, metrics, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimiser.zero_grad()
 
-def train_classifier(model, train_loader, test_loader, do_cf_regularisation=False, do_mixup=False):
-    accs = []
-    f1s = []
-    optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        if do_mixup:
+            data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device("cuda:0"))
+            logits = model(data)
+            loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
+        else:
+            logits = model(data)    
+            loss = loss_fn(logits, target)
+            if do_cf_regularisation:
+                loss += model.regularisation(data, metrics, target, logits)
 
-    for epoch in range(1, EPOCHS):
-        _, _, _, acc, f1 = test_classifier(model, test_loader)
-        accs.append(acc)
-        f1s.append(f1)
-
-        model.train()
-        for batch_idx, (data, metrics, target) in enumerate(train_loader):
-            data, target = data.to(device), target.to(device)
-            optimiser.zero_grad()
-
-            if do_mixup:
-                data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device("cuda:0"))
-                logits = model(data)
-                loss = lam * LOSS_FN(logits, targets_a) + (1 - lam) * LOSS_FN(logits, targets_b)
-            else:
-                logits = model(data)    
-                loss = LOSS_FN(logits, target)
-                if do_cf_regularisation:
-                    loss += model.regularisation(data, metrics, target, logits)
-
-            loss.backward()
-            optimiser.step()
-            if batch_idx % 10 == 0:
-                print('[Train loop]\tTrain Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, batch_idx * len(data), len(train_loader.dataset),
-                    100. * batch_idx / len(train_loader), loss.item()))
-            # train_losses.append(loss.item())
-            # train_counter.append((batch_idx*64) + ((epoch-1)*len(train_loader.dataset)))
-
-    return accs, f1s
-
+        loss.backward()
+        optimiser.step()
+        if batch_idx % 10 == 0:
+            print('[Train loop]\tTrain Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                epoch, batch_idx * len(data), len(train_loader.dataset),
+                100. * batch_idx / len(train_loader), loss.item()))
 
 def test_classifier(model, test_loader):
+    loss_fn = torch.nn.CrossEntropyLoss()
     model.eval()
     test_loss = 0
     correct = 0
-    c_matrix = np.zeros((model.out_channels, model.out_channels))
-    precision = np.zeros(model.out_channels)
     y_true = []
     y_pred = []
     attr_true = []
@@ -92,22 +76,18 @@ def test_classifier(model, test_loader):
             data = data.to(device)
             target = target.to(device)
             output = model(data)
-            test_loss += LOSS_FN(output, target)
+            test_loss += loss_fn(output, target)
             _, pred = torch.max(output, 1)
-            # pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
 
             y_true += target.tolist()
             y_pred += pred.cpu().numpy().tolist()
             metrics = list(map(lambda x: x.tolist(), list(metrics.values())))
             attr_true = metrics if len(attr_true)==0 else [m+n for m,n in zip(attr_true, metrics)]
-            # y_pred += pred.numpy().T[0].tolist()
     test_loss /= len(test_loader.dataset)
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)
     attr_true = np.asarray(attr_true)
-    # test_losses.append(test_loss)
-    confusion_matrix = get_confusion_matrix(y_pred, y_true)
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
     print('[Test loop]\tF1 score: ' + str(f1))
@@ -115,13 +95,22 @@ def test_classifier(model, test_loader):
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, attr_true, acc, f1
 
-def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, save_path, do_cf_regularisation=False, do_mixup=False):
-    accuracies, f1s = train_classifier(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
-    torch.save(model.state_dict(), save_path)
-    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader)
-    accuracies.append(acc)
-    f1s.append(f1)
-    pred_arr.append(y_pred)
-    true_arr.append(y_true)
+def train_and_evaluate(model, train_loader, test_loader, save_path, do_cf_regularisation=False, do_mixup=False):
+    optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    loss_fn = torch.nn.CrossEntropyLoss()
+    accs = []
+    f1s = []
 
-    return accuracies, f1s
+    for epoch in range(1, EPOCHS):
+        _, _, _, acc, f1 = test_classifier(model, test_loader)
+        accs.append(acc)
+        f1s.append(f1)
+
+        run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
+        torch.save(model.state_dict(), save_path)
+
+    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader)
+    accs.append(acc)
+    f1s.append(f1)
+
+    return accs, f1s, y_pred, y_true
