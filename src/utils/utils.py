@@ -76,7 +76,6 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
 
         else:
             cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
-        
         samples = {
             'age': [],
             'sex': [],
