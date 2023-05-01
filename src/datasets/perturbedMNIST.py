@@ -2,7 +2,7 @@ import torch
 from torchvision import datasets
 import pandas as pd
 
-from params import *
+from utils.params import *
 
 import sys
 sys.path.append("..")

@@ -6,7 +6,7 @@ from sklearn import metrics
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, test_classifier
-from params import *
+from utils.params import *
 from utils.evaluate import plot_metrics_comparison, classifier_fairness_analysis, metrics_per_attribute
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

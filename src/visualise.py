@@ -5,7 +5,7 @@ from torchvision import transforms
 from datasets.perturbedMNIST import PerturbedMNIST
 from utils.utils import visualise_t_sne
 from classifier import ConvNet
-from params import *
+from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

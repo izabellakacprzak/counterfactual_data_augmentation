@@ -6,7 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 
 import tqdm
-from params import *
+from utils.params import *
 
 from morphomnist import morpho, perturb, measure
 

@@ -2,7 +2,7 @@ import torch
 from torchvision import datasets
 import pandas as pd
 
-from params import *
+from utils.params import *
 from utils.utils import *
 from tqdm import tqdm
 from skimage.io import imread

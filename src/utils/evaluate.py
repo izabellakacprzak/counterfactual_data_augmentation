@@ -7,7 +7,7 @@ import numpy as np
 import torchvision.transforms as TF
 from scipy import stats
 
-from params import *
+from utils.params import *
 from morphomnist import measure
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
