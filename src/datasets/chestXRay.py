@@ -74,8 +74,11 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['race'].append(self.data.loc[idx, 'race_label'])
         self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
 
-  def debias(self, method):
-    new_samples = debias_chestxray(self, method)
+    if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
+      self._debias(method)
+
+  def _debias(self, method):
+    new_samples = debias_chestxray(self.samples, method)
     self.samples['x'] += new_samples['x']
     self.samples['finding'] += new_samples['finding']
     self.samples['age'] += new_samples['age']

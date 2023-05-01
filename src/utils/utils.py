@@ -86,6 +86,14 @@ def _apply_debiasing_method(method, img):
         return img
 
 def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
+    samples = {
+            'age': [],
+            'sex': [],
+            'finding': [],
+            'x': [],
+            'race': [],
+        }
+    
     from dscmchest.generate_counterfactuals import generate_cfs
     if method == AugmentationMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
@@ -101,13 +109,6 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
 
         else:
             cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
-        samples = {
-            'age': [],
-            'sex': [],
-            'finding': [],
-            'x': [],
-            'race': [],
-        }
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]
             samples['age'].append(metrics['age'])
@@ -118,15 +119,19 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
 
         return samples
 
-    # TODO: IMPLEMENT!!!
+    # TODO: TEST!!!
     new_data = []
-    for _, (img, metrics, label) in enumerate(train_data):
-        # TODO: add condition when biased sample - do analysis of data
-        if True:
+    for idx in range(len(train_data['x'])):
+        # TODO: change the condition based on what to impact
+        if train_data['race'] == 1:
             for _ in range(10):
-                new_datapoint = metrics.copy()
-                new_datapoint['x'] = _apply_debiasing_method(method, img)
-                new_datapoint['finding'] = label
+                # TODO: make sure these are copied not referenced
+                samples['age'].append(train_data['age'][idx])
+                samples['sex'].append(train_data['sex'][idx])
+                samples['race'].append(train_data['race'][idx])
+                samples['finding'].append(train_data['finding'][idx])
+                new_x = _apply_debiasing_method(method, train_data['x'][idx])
+                samples['x'].append(new_x)
 
     return new_data
 
