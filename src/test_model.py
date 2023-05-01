@@ -2,16 +2,64 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn import metrics
+import matplotlib.pyplot as plt
+import numpy as np
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, test_classifier
 from utils.params import *
-from utils.evaluate import plot_metrics_comparison, classifier_fairness_analysis, metrics_per_attribute
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def plot_metrics_comparison(run_names, run_metrics, metric_name):
+    fig = plt.figure(metric_name)
+    num_classes = len(run_metrics[0])
+    r = np.arange(num_classes)
+    width = 0.1
+    
+    metrics = {}
+    for idx in range(len(run_names)):
+        metrics[run_names[idx]] = run_metrics[idx]
+
+    for run, metric in metrics.items():
+        plt.bar(r, metric, width = width, label=run)
+        r = r + width
+    
+    plt.xlabel("Label")
+    plt.ylabel(metric_name)
+    
+    plt.xticks(np.arange(num_classes) + width/2, np.arange(num_classes))
+    plt.yticks(np.arange(0, 1.1, 0.05))
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
+    
+    plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
+
+def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
+    for idx, attribute in enumerate(attributes):
+        if attribute == 'thickness':
+            continue
+
+        attr_values = metrics_true[idx]
+        unique_attr_values = set(attr_values)
+
+        # Accuracy per attribute value
+        unique_counts = {u:0 for u in unique_attr_values}
+        unique_correct_counts = {u:0 for u in unique_attr_values}
+
+        for idx, t in enumerate(y_true):
+            p = y_pred[idx]
+            unique_counts[attr_values[idx]] = unique_counts[attr_values[idx]] + 1
+            if p == t:
+                unique_correct_counts[attr_values[idx]] = unique_correct_counts[attr_values[idx]] + 1
+
+        print("Accuracy for " + str(attribute))
+        for av in unique_attr_values:
+            acc = str(unique_correct_counts[av] / unique_counts[av])
+            print("Accuracy value for {}: {}".format(av, acc))
+
 def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
+    ## Test pretrained model ##
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
@@ -20,13 +68,10 @@ def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
 
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    # classifier_fairness_analysis(model, test_loader, model_path)
-
     y_pred, y_true, metrics_true, acc, f1 = test_classifier(model, test_loader)
+
+    ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
-
-    metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
-
     f1s = []
     precisions = []
     recalls = []
@@ -35,6 +80,9 @@ def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
         f1s.append(report_dict[label]['f1-score'])
         precisions.append(report_dict[label]['precision'])
         recalls.append(report_dict[label]['recall'])
+
+    ## Print performance metrics per attribute (eg. age, thickness etc) ##
+    metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
 
     return f1s, precisions, recalls
 
@@ -48,16 +96,17 @@ def test_perturbed_mnist():
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
-        mnist_models_path = model + "_PERTURBED_MNIST"
+        mnist_model_path = model + "_PERTURBED_MNIST"
         test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
-        f1, precision, recall = test_pretrained(mnist_models_path, test_dataset, ['thickness', 'intensity', 'bias_aligned'], 1, 10)
-
+        in_channels = 1
+        num_classes = 10
+        attributes = ['thickness', 'intensity', 'bias_aligned']
+        f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, attributes, in_channels, num_classes)
 
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
-
 
     plot_metrics_comparison(models, f1s, 'MNISTf1score')
     plot_metrics_comparison(models, precisions, 'MNISTprecision')
@@ -73,15 +122,17 @@ def test_chestxray():
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
-        chestray_models_path = model + "_CHESTXRAY"
+        chestxray_model_path = model + "_CHESTXRAY"
         test_dataset = ChestXRay(train=False, transform=transforms_list)
 
-        f1, precision, recall = test_pretrained(chestray_models_path, test_dataset, ['sex', 'age', 'race'], 1, 2)
+        in_channels = 1
+        num_classes = 2
+        attributes = ['sex', 'age', 'race']
+        f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, attributes, in_channels, num_classes)
 
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
-
 
     plot_metrics_comparison(models, f1s, 'CHESTXRAYf1-score')
     plot_metrics_comparison(models, precisions, 'CHESTXRAYprecision')

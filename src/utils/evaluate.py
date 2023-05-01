@@ -6,6 +6,9 @@ from tqdm import tqdm
 import numpy as np
 import torchvision.transforms as TF
 from scipy import stats
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+import seaborn as sns
 
 from utils.params import *
 from morphomnist import measure
@@ -120,14 +123,14 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\tDisease negative counts:")
     print("[ChestXRay attribute counts]\t"+negative_counts)
 
-def get_cf_for_mnist(img, thickness, intensity, label):
+def _get_cf_for_mnist(img, thickness, intensity, label):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x
     img = img.float() * 254
     img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
     x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
     return torch.from_numpy(x_cf).unsqueeze(0).float()
 
-def get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
+def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
     from chest_xray.generate_counterfactuals import generate_cf
     obs = {'x': img,
            'age': metrics['age'],
@@ -163,9 +166,9 @@ def classifier_fairness_analysis(model, test_loader, run_name):
             cfs = []
             for i in range(len(data)):
                 if "MNIST" in run_name:
-                    cfs.append(get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                    cfs.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                 else:
-                    cfs.append(get_cf_for_chestxray(data[i][0], metrics[:][i], labels[i], 'male', None, None))
+                    cfs.append(_get_cf_for_chestxray(data[i][0], metrics[:][i], labels[i], 'male', None, None))
 
             cfs = torch.stack(cfs)
             logits = model.model(cfs).cpu()
@@ -183,51 +186,71 @@ def classifier_fairness_analysis(model, test_loader, run_name):
     plt.scatter(X,Y)
     plt.savefig("plots/fairness_correct_"+ run_name +".png")
 
-def plot_metrics_comparison(run_names, run_metrics, metric_name):
-    fig = plt.figure(metric_name)
-    num_classes = len(run_metrics[0])
-    r = np.arange(num_classes)
-    width = 0.1
+def _get_embeddings(model, data_loader):
+    model.eval()
+    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
+
+    embeddings = np.zeros(shape=(0, 784))
+    labels = np.zeros(shape=(0))
+    thicknesses = np.zeros(shape=(0))
+    for _, (data, metrics, target) in enumerate(data_loader):
+        data, target = data.to(device), target.to(device)
+        output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
+        s = output.shape
+        output = output.reshape((s[0], 784))
+        labels = np.concatenate((labels, target.cpu().numpy().ravel()))
+        embeddings = np.concatenate([embeddings, output],axis=0)
+        thicknesses = np.concatenate((thicknesses, metrics['thickness']))
+
+    return embeddings, thicknesses, labels
+
+def visualise_t_sne(test_loader, model, file_name):
+    embeddings, thicknesses, labels = _get_embeddings(model, test_loader)
     
-    metrics = {}
-    for idx in range(len(run_names)):
-        metrics[run_names[idx]] = run_metrics[idx]
+    feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
+    df = pd.DataFrame(embeddings, columns=feat_cols)
+    df['y'] = labels
+    df['thickness'] = thicknesses.astype(int)
+    df['label'] = df['y'].apply(lambda i: str(i))
 
-    for run, metric in metrics.items():
-        plt.bar(r, metric, width = width, label=run)
-        r = r + width
-    
-    plt.xlabel("Label")
-    plt.ylabel(metric_name)
-    
-    # plt.grid(linestyle='--')
-    plt.xticks(np.arange(num_classes) + width/2, np.arange(num_classes))
-    plt.yticks(np.arange(0, 1.1, 0.05))
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
-    
-    # plt.show()
-    plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
-    # plt.show()
+    N = 100000
+    rndperm = np.random.permutation(df.shape[0])
+    df_subset = df.loc[rndperm[:N],:].copy()
+    data_subset = df_subset[feat_cols].values
 
-def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
-    for idx, attribute in enumerate(attributes):
-        if attribute == 'thickness':
-            continue
+    # reduce dimensions before feeding into t-SNE
+    pca_50 = PCA(n_components=50)
+    pca_result_50 = pca_50.fit_transform(data_subset)
 
-        attr_values = metrics_true[idx]
-        unique_attr_values = set(attr_values)
+    time_start = time.time()
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    tsne_pca_results = tsne.fit_transform(pca_result_50)
 
-        # Accuracy per attribute value
-        unique_counts = {u:0 for u in unique_attr_values}
-        unique_correct_counts = {u:0 for u in unique_attr_values}
+    print('[t-SNE]\tt-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
 
-        for idx, t in enumerate(y_true):
-            p = y_pred[idx]
-            unique_counts[attr_values[idx]] = unique_counts[attr_values[idx]] + 1
-            if p == t:
-                unique_correct_counts[attr_values[idx]] = unique_correct_counts[attr_values[idx]] + 1
+    df_subset['tsne-pca50-one'] = tsne_pca_results[:,0]
+    df_subset['tsne-pca50-two'] = tsne_pca_results[:,1]
 
-        print("Accuracy for " + str(attribute))
-        for av in unique_attr_values:
-            acc = str(unique_correct_counts[av] / unique_counts[av])
-            print("Accuracy value for {}: {}".format(av, acc))
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="y",
+        palette=sns.color_palette("tab10", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name + "_labels.png") 
+
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="thickness",
+        palette=sns.color_palette("hls", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name + "_thickness.png") 

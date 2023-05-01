@@ -9,15 +9,29 @@ from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def visualise(models):
-    for model_name in models:
-        model = ConvNet(in_channels=1, out_channels=10)
-        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_" + model_name + "_PERTURBED_MNIST.pt", map_location=device))
+def visualise_embeddings(model_path):
+    model = ConvNet(in_channels=1, out_channels=10)
+    if "MNIST" in model_path:
+        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
+    else:
+        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
 
-        transforms_list = transforms.Compose([transforms.ToTensor()])
-        test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
-        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-        visualise_t_sne(test_loader, model, "plots/"+model_name+"t_sne")
+    transforms_list = transforms.Compose([transforms.ToTensor()])
+    test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    visualise_t_sne(test_loader, model, "plots/"+model_path+"t_sne")
 
-models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
-visualise(models)
+def visualise_perturbed_mnist():
+    models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+    for model in models:
+        mnist_model_path = model + "_PERTURBED_MNIST"
+        visualise_embeddings(mnist_model_path)
+
+def visualise_chestxray():
+    models = ["BIASED"]
+    for model in models:
+        chestxray_model_path = model + "_CHESTXRAY"
+        visualise_embeddings(chestxray_model_path)
+
+# visualise_perturbed_mnist()
+# visualise_chestxray()
