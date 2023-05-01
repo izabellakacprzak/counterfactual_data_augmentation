@@ -134,7 +134,7 @@ def get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
            'race': metrics['race'],
            'sex': metrics['sex'],
            'finding': label}
-    cf = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
+    cf = generate_cf(obs, amount=1, do_s=do_s, do_r=do_r, do_a=do_a)
     return cf
 
 # Generates a scatterplot of how similar predictions made by classifier 
@@ -213,7 +213,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     for idx, attribute in enumerate(attributes):
         if attribute == 'thickness':
             continue
-        
+
         attr_values = metrics_true[idx]
         unique_attr_values = set(attr_values)
 

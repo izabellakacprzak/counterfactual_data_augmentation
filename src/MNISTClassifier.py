@@ -115,8 +115,9 @@ def test_MNIST(model, test_loader):
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, attr_true, acc, f1
 
-def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_regularisation=False, do_mixup=False):
+def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, save_path, do_cf_regularisation=False, do_mixup=False):
     accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
+    torch.save(model.state_dict(), save_path)
     y_pred, y_true, _, acc, f1 = test_MNIST(model, test_loader)
     accuracies.append(acc)
     f1s.append(f1)

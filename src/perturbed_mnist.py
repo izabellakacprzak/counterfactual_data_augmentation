@@ -36,12 +36,13 @@ def train_and_evaluate_dataset(run_name, bias_conflicting_perc=1.0, debiasing_me
 
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
-    accuracies, f1s = train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, do_cf_reg, do_mixup)
+    save_path = "../checkpoints/mnist/classifier_" + run_name + ".pt"
+    accuracies, f1s = train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
 
-    torch.save(model.state_dict(), "../checkpoints/mnist/classifier_" + run_name + ".pt")
-    visualise_t_sne(test_loader, model, "plots/mnist/"+run_name+"t_sne")
+    # torch.save(model.state_dict(), "../checkpoints/mnist/classifier_" + run_name + ".pt")
+    # visualise_t_sne(test_loader, model, "plots/mnist/"+run_name+"t_sne")
 
 ############################################################
 # Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
