@@ -5,7 +5,7 @@ from sklearn import metrics
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from MNISTClassifier import ConvNet, test_MNIST
+from classifier import ConvNet, test_classifier
 from params import *
 from utils.evaluate import plot_metrics_comparison, classifier_fairness_analysis, metrics_per_attribute
 
@@ -22,7 +22,7 @@ def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
 
     # classifier_fairness_analysis(model, test_loader, model_path)
 
-    y_pred, y_true, metrics_true, acc, f1 = test_MNIST(model, test_loader)
+    y_pred, y_true, metrics_true, acc, f1 = test_classifier(model, test_loader)
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
 
     metrics_per_attribute(attributes, metrics_true, y_true, y_pred)

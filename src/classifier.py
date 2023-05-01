@@ -41,13 +41,13 @@ class ConvNet(torch.nn.Module):
         return LAMBDA * MSE(logits, logits_cf)
 
 
-def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False, do_mixup=False):
+def train_classifier(model, train_loader, test_loader, do_cf_regularisation=False, do_mixup=False):
     accs = []
     f1s = []
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     for epoch in range(1, EPOCHS):
-        _, _, _, acc, f1 = test_MNIST(model, test_loader)
+        _, _, _, acc, f1 = test_classifier(model, test_loader)
         accs.append(acc)
         f1s.append(f1)
 
@@ -78,7 +78,7 @@ def train_MNIST(model, train_loader, test_loader, do_cf_regularisation=False, do
     return accs, f1s
 
 
-def test_MNIST(model, test_loader):
+def test_classifier(model, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
@@ -116,9 +116,9 @@ def test_MNIST(model, test_loader):
     return y_pred, y_true, attr_true, acc, f1
 
 def train_and_evaluate(model, train_loader, test_loader, pred_arr, true_arr, save_path, do_cf_regularisation=False, do_mixup=False):
-    accuracies, f1s = train_MNIST(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
+    accuracies, f1s = train_classifier(model, train_loader, test_loader, do_cf_regularisation, do_mixup)
     torch.save(model.state_dict(), save_path)
-    y_pred, y_true, _, acc, f1 = test_MNIST(model, test_loader)
+    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader)
     accuracies.append(acc)
     f1s.append(f1)
     pred_arr.append(y_pred)

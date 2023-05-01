@@ -3,7 +3,7 @@ from torchvision import transforms
 from matplotlib import pyplot as plt
 import numpy as np
 from datasets.chestXRay import ChestXRay
-from MNISTClassifier import ConvNet, train_and_evaluate
+from classifier import ConvNet, train_and_evaluate
 
 from params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric, get_attribute_counts_chestxray
