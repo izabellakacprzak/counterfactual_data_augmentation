@@ -4,7 +4,6 @@ from matplotlib.ticker import FormatStrFormatter
 import random
 from tqdm import tqdm
 import numpy as np
-import torchvision.transforms as TF
 from scipy import stats
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -122,69 +121,6 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\t"+positive_counts)
     print("[ChestXRay attribute counts]\tDisease negative counts:")
     print("[ChestXRay attribute counts]\t"+negative_counts)
-
-def _get_cf_for_mnist(img, thickness, intensity, label):
-    from dscm.generate_counterfactuals import generate_counterfactual_for_x
-    img = img.float() * 254
-    img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
-    x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
-    return torch.from_numpy(x_cf).unsqueeze(0).float()
-
-def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
-    from chest_xray.generate_counterfactuals import generate_cf
-    obs = {'x': img,
-           'age': metrics['age'],
-           'race': metrics['race'],
-           'sex': metrics['sex'],
-           'finding': label}
-    cf = generate_cf(obs, amount=1, do_s=do_s, do_r=do_r, do_a=do_a)
-    return cf
-
-# Generates a scatterplot of how similar predictions made by classifier 
-# on counterfactual data are to predictions on original data
-# all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name):
-    X, Y = [], []
-
-    model.model.eval()
-    fairness_against_digit = 6
-    for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
-        data = data.to(device)
-        labels = labels.to(device)
-        logits = model.model(data).cpu()
-        probs = torch.nn.functional.softmax(logits, dim=1).tolist()
-        original_probs = []
-
-        # get probabilities for original data
-        for idx, prob in enumerate(probs):
-            original_probs.append(prob[fairness_against_digit])
-        
-        # get probabilities for counterfactual data with interventions on specific attribute
-        for _ in range(5):
-            X = X + original_probs
-
-            cfs = []
-            for i in range(len(data)):
-                if "MNIST" in run_name:
-                    cfs.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
-                else:
-                    cfs.append(_get_cf_for_chestxray(data[i][0], metrics[:][i], labels[i], 'male', None, None))
-
-            cfs = torch.stack(cfs)
-            logits = model.model(cfs).cpu()
-            probs = torch.nn.functional.softmax(logits, dim=1).tolist()
-            cf_probs = []
-            for idx, prob in enumerate(probs):
-                cf_probs.append(prob[fairness_against_digit])
-            
-            Y = Y + cf_probs
-
-    X = np.array(X)
-    Y = np.array(Y)
-
-    fig = plt.figure(run_name)
-    plt.scatter(X,Y)
-    plt.savefig("plots/fairness_correct_"+ run_name +".png")
 
 def _get_embeddings(model, data_loader):
     model.eval()

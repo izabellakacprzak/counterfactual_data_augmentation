@@ -91,14 +91,14 @@ def test_perturbed_mnist():
     f1s = []
     precisions = []
     recalls = []
+    
     transforms_list = transforms.Compose([transforms.ToTensor()])
+    test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
         mnist_model_path = model + "_PERTURBED_MNIST"
-        test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
-
         in_channels = 1
         num_classes = 10
         attributes = ['thickness', 'intensity', 'bias_aligned']
@@ -119,12 +119,12 @@ def test_chestxray():
     recalls = []
     
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
+    test_dataset = ChestXRay(train=False, transform=transforms_list)
+
     for model in models:
         print("[Test trained]\tTesting model: " + model)
 
         chestxray_model_path = model + "_CHESTXRAY"
-        test_dataset = ChestXRay(train=False, transform=transforms_list)
-
         in_channels = 1
         num_classes = 2
         attributes = ['sex', 'age', 'race']
