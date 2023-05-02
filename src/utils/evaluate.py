@@ -130,7 +130,8 @@ def _get_embeddings(model, data_loader, img_dim):
 
     embeddings = np.zeros(shape=(0, img_dim*img_dim))
     labels = np.zeros(shape=(0))
-    thicknesses = np.zeros(shape=(0))
+    race = np.zeros(shape=(0))
+    sex = np.zeros(shape=(0))
     for _, (data, metrics, target) in enumerate(data_loader):
         data, target = data.to(device), target.to(device)
         output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
@@ -138,17 +139,19 @@ def _get_embeddings(model, data_loader, img_dim):
         output = output.reshape((s[0], img_dim*img_dim))
         labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
-        thicknesses = np.concatenate((thicknesses, metrics['thickness']))
+        race = np.concatenate((race, metrics['race'].item()))
+        sex = np.concatenate((race, metrics['sex'].item()))
 
-    return embeddings, thicknesses, labels
+    return embeddings, race, sex, labels
 
 def visualise_t_sne(test_loader, model, img_dim, file_name):
-    embeddings, thicknesses, labels = _get_embeddings(model, test_loader, img_dim)
+    embeddings, race, sex, labels = _get_embeddings(model, test_loader, img_dim)
     
     feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)
     df['y'] = labels
-    df['thickness'] = thicknesses.astype(int)
+    df['race'] = race.astype(int)
+    df['sex'] = sex.astype(int)
     df['label'] = df['y'].apply(lambda i: str(i))
 
     N = 100000
@@ -184,11 +187,23 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     plt.figure(figsize=(16,10))
     plot = sns.scatterplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
-        hue="thickness",
+        hue="race",
         palette=sns.color_palette("hls", 10),
         data=df_subset,
         legend="full",
         alpha=0.3
     )
     fig = plot.get_figure()
-    fig.savefig(file_name + "_thickness.png") 
+    fig.savefig(file_name + "_race.png") 
+
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="sex",
+        palette=sns.color_palette("hls", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name + "_sex.png") 
