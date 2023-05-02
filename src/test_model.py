@@ -78,7 +78,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             f1 = 0 if div==0 else tp_unique[av]/div
             print("F1-score value for {}: {}".format(av, str(f1)))
 
-def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
+def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
     ## Test pretrained model ##
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
@@ -88,7 +88,7 @@ def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
 
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    y_pred, y_true, metrics_true, acc, f1 = test_classifier(model, test_loader)
+    y_pred, y_true, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
 
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
@@ -122,7 +122,8 @@ def test_perturbed_mnist():
         in_channels = 1
         num_classes = 10
         attributes = ['thickness', 'intensity', 'bias_aligned']
-        f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, attributes, in_channels, num_classes)
+        loss_fn = torch.nn.CrossEntropyLoss()
+        f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
         f1s.append(f1)
         precisions.append(precision)
@@ -148,7 +149,8 @@ def test_chestxray():
         in_channels = 1
         num_classes = 2
         attributes = ['sex', 'age', 'race']
-        f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, attributes, in_channels, num_classes)
+        loss_fn = torch.nn.BCELoss()
+        f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
         f1s.append(f1)
         precisions.append(precision)

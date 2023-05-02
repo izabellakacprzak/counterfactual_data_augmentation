@@ -63,8 +63,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def test_classifier(model, test_loader):
-    loss_fn = torch.nn.CrossEntropyLoss()
+def test_classifier(model, test_loader, loss_fn):
     model.eval()
     test_loss = 0
     correct = 0
@@ -101,14 +100,14 @@ def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_
     f1s = []
 
     for epoch in range(1, EPOCHS):
-        _, _, _, acc, f1 = test_classifier(model, test_loader)
+        _, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
         accs.append(acc)
         f1s.append(f1)
 
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
         torch.save(model.state_dict(), save_path)
 
-    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader)
+    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
     accs.append(acc)
     f1s.append(f1)
 
