@@ -21,19 +21,19 @@ def _get_cf_for_mnist(img, thickness, intensity, label):
     return torch.from_numpy(x_cf).unsqueeze(0).float()
 
 def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
-    from chest_xray.generate_counterfactuals import generate_cf
+    from dscmchest.generate_counterfactuals import generate_cf
     obs = {'x': img,
            'age': metrics['age'],
            'race': metrics['race'],
            'sex': metrics['sex'],
            'finding': label}
-    cf = generate_cf(obs, amount=1, do_s=do_s, do_r=do_r, do_a=do_a)
+    cf, _ = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
     return cf
 
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, cfs_per_sample=7):
+def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, cfs_per_sample=1):
     X, Y = [], []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
         data = data.to(device)
@@ -45,7 +45,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
         # get probabilities for original data
         for _, prob in enumerate(probs):
             original_probs.append(prob[fairness_label])
-        
+        print(original_probs) 
         # get probabilities for counterfactual data with interventions on specific attribute
         for _ in range(cfs_per_sample):
             X = X + original_probs
@@ -55,9 +55,10 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
                 if "MNIST" in run_name:
                     cfs.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                 else:
-                    do_s, do_r, do_a = 'male', None, None
+                    do_s, do_r, do_a = None, 1, None
                     ms = {k:vs[i] for k,vs in metrics.items()}
-                    cfs.append(_get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a))
+                    cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
+                    if len(cf) != 0: cfs.append(torch.from_numpy(cf).to(device))
 
             cfs = torch.stack(cfs)
             logits = model.model(cfs).cpu()
@@ -65,7 +66,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
             cf_probs = []
             for _, prob in enumerate(probs):
                 cf_probs.append(prob[fairness_label])
-            
+            print(cf_probs)
             Y = Y + cf_probs
 
     X = np.array(X)
@@ -75,8 +76,8 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
     plt.scatter(X,Y)
     plt.savefig("plots/fairness_correct_"+ run_name +".png")
 
-def fairness_analysis(model_path, test_dataset, fairness_label):
-    model = ConvNet(in_channels=1, out_channels=10)
+def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label):
+    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
@@ -94,7 +95,7 @@ def visualise_perturbed_mnist():
 
     for model in models:
         mnist_model_path = model + "_PERTURBED_MNIST"
-        fairness_analysis(mnist_model_path, test_dataset, 0)
+        fairness_analysis(mnist_model_path, test_dataset, 1, 10, 0)
 
 def visualise_chestxray():
     models = ["BIASED"]
@@ -104,4 +105,6 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        fairness_analysis(chestxray_model_path, test_dataset, 0)
+        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0)
+
+visualise_chestxray()
