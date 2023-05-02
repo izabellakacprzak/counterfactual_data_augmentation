@@ -45,26 +45,36 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         attr_values = metrics_true[idx]
         unique_attr_values = set(attr_values)
 
-        unique_counts = {u:0 for u in unique_attr_values}
-        unique_correct_counts = {u:0 for u in unique_attr_values}
+        # unique_counts = {u:0 for u in unique_attr_values}
+        tp_unique = {u:0 for u in unique_attr_values}
+        tn_unique = {u:0 for u in unique_attr_values}
+        fp_unique = {u:0 for u in unique_attr_values}
+        fn_unique = {u:0 for u in unique_attr_values}
 
         for idx, t in enumerate(y_true):
             p = y_pred[idx]
-            unique_counts[attr_values[idx]] = unique_counts[attr_values[idx]] + 1
             if p == t:
-                unique_correct_counts[attr_values[idx]] = unique_correct_counts[attr_values[idx]] + 1
+                if t == 1:
+                    tp_unique[attr_values[idx]] = tp_unique[attr_values[idx]] + 1
+                else:
+                    tn_unique[attr_values[idx]] = tn_unique[attr_values[idx]] + 1
+            else:
+                if t == 1:
+                    fn_unique[attr_values[idx]] = fn_unique[attr_values[idx]] + 1
+                else:
+                    fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
 
         # Accuracy per attribute value
         print("Accuracy for " + str(attribute))
         for av in unique_attr_values:
-            acc = str(unique_correct_counts[av] / unique_counts[av])
-            print("Accuracy value for {}: {}".format(av, acc))
+            acc = (tp_unique[av] + tn_unique[av]) / tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av]
+            print("Accuracy value for {}: {}".format(av, str(acc)))
 
         # F1-score per attribute value
         print("F1-score for " + str(attribute))
         for av in unique_attr_values:
-            f1 = f1_score(unique_correct_counts[av], unique_counts[av])
-            print("F1-score value for {}: {}".format(av, f1))
+            f1 = (tp_unique[av] / (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av])))
+            print("F1-score value for {}: {}".format(av, str(f1)))
 
 def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
     ## Test pretrained model ##
