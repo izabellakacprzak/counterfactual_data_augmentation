@@ -4,6 +4,7 @@ from torchvision import transforms
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import f1_score
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
@@ -11,6 +12,7 @@ from classifier import ConvNet, test_classifier
 from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
     fig = plt.figure(metric_name)
@@ -43,7 +45,6 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         attr_values = metrics_true[idx]
         unique_attr_values = set(attr_values)
 
-        # Accuracy per attribute value
         unique_counts = {u:0 for u in unique_attr_values}
         unique_correct_counts = {u:0 for u in unique_attr_values}
 
@@ -53,10 +54,17 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             if p == t:
                 unique_correct_counts[attr_values[idx]] = unique_correct_counts[attr_values[idx]] + 1
 
+        # Accuracy per attribute value
         print("Accuracy for " + str(attribute))
         for av in unique_attr_values:
             acc = str(unique_correct_counts[av] / unique_counts[av])
             print("Accuracy value for {}: {}".format(av, acc))
+
+        # F1-score per attribute value
+        print("F1-score for " + str(attribute))
+        for av in unique_attr_values:
+            f1 = f1_score(unique_correct_counts[av], unique_counts[av])
+            print("F1-score value for {}: {}".format(av, f1))
 
 def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):
     ## Test pretrained model ##
@@ -91,7 +99,7 @@ def test_perturbed_mnist():
     f1s = []
     precisions = []
     recalls = []
-    
+
     transforms_list = transforms.Compose([transforms.ToTensor()])
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
