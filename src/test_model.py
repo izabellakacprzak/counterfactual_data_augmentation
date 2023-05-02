@@ -92,6 +92,10 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
+    # Get accuracy separetely #
+    matrix = metrics.confusion_matrix(y_true, y_pred)
+    accs = matrix.diagonal()/matrix.sum(axis=1)
+
     f1s = []
     precisions = []
     recalls = []
@@ -101,13 +105,23 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         precisions.append(report_dict[label]['precision'])
         recalls.append(report_dict[label]['recall'])
 
+    print("Accuracies")
+    print(accs)
+    print("F1-scores")
+    print(f1s)
+    print("Precisoins")
+    print(precisions)
+    print("Recalls")
+    print(recalls)
+
     ## Print performance metrics per attribute (eg. age, thickness etc) ##
     metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
 
-    return f1s, precisions, recalls
+    return accs, f1s, precisions, recalls
 
 def test_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+    accs = []
     f1s = []
     precisions = []
     recalls = []
@@ -123,18 +137,21 @@ def test_perturbed_mnist():
         num_classes = 10
         attributes = ['thickness', 'intensity', 'bias_aligned']
         loss_fn = torch.nn.CrossEntropyLoss()
-        f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+        acc, f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
+        accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
 
+    plot_metrics_comparison(models, accs, 'MNISTaccuracy')
     plot_metrics_comparison(models, f1s, 'MNISTf1score')
     plot_metrics_comparison(models, precisions, 'MNISTprecision')
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
     models = ["BIASED"]
+    accs = []
     f1s = []
     precisions = []
     recalls = []
@@ -150,12 +167,14 @@ def test_chestxray():
         num_classes = 2
         attributes = ['sex', 'age', 'race']
         loss_fn = torch.nn.BCELoss()
-        f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+        acc, f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
+        accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
 
+    plot_metrics_comparison(models, accs, 'CHESTXRAYaccuracy')
     plot_metrics_comparison(models, f1s, 'CHESTXRAYf1-score')
     plot_metrics_comparison(models, precisions, 'CHESTXRAYprecision')
     plot_metrics_comparison(models, recalls, 'CHESTXRAYrecall')
