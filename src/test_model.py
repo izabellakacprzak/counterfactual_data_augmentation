@@ -67,13 +67,15 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         # Accuracy per attribute value
         print("Accuracy for " + str(attribute))
         for av in unique_attr_values:
-            acc = (tp_unique[av] + tn_unique[av]) / tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av]
+            div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
+            acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div 
             print("Accuracy value for {}: {}".format(av, str(acc)))
 
         # F1-score per attribute value
         print("F1-score for " + str(attribute))
         for av in unique_attr_values:
-            f1 = (tp_unique[av] / (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av])))
+            div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
+            f1 = 0 if div==0 else tp_unique[av]/div
             print("F1-score value for {}: {}".format(av, str(f1)))
 
 def test_pretrained(model_path, dataset, attributes, in_channels, out_channels):

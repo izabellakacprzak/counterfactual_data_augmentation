@@ -4,14 +4,14 @@ from torchvision import transforms
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from utils.utils import visualise_t_sne
+from utils.evaluate import visualise_t_sne
 from classifier import ConvNet
 from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-def visualise_embeddings(model_path, test_dataset):
-    model = ConvNet(in_channels=1, out_channels=10)
+device = torch.device("cpu")
+def visualise_embeddings(model_path, test_dataset, in_channels, out_channels):
+    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
@@ -28,7 +28,7 @@ def visualise_perturbed_mnist():
 
     for model in models:
         mnist_model_path = model + "_PERTURBED_MNIST"
-        visualise_embeddings(mnist_model_path)
+        visualise_embeddings(mnist_model_path, test_dataset, 1, 10)
 
 def visualise_chestxray():
     models = ["BIASED"]
@@ -38,7 +38,7 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        visualise_embeddings(chestxray_model_path)
+        visualise_embeddings(chestxray_model_path, test_dataset, 1, 2)
 
 # visualise_perturbed_mnist()
-# visualise_chestxray()
+visualise_chestxray()
