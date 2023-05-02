@@ -78,7 +78,7 @@ class ChestXRay(datasets.VisionDataset):
       self._debias(method)
 
   def _debias(self, method):
-    new_samples = debias_chestxray(self.samples, method)
+    new_samples = debias_chestxray(self, method)
     self.samples['x'] += new_samples['x']
     self.samples['finding'] += new_samples['finding']
     self.samples['age'] += new_samples['age']
