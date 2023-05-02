@@ -124,26 +124,26 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\tDisease negative counts:")
     print("[ChestXRay attribute counts]\t"+negative_counts)
 
-def _get_embeddings(model, data_loader):
+def _get_embeddings(model, data_loader, img_dim):
     model.eval()
     feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
 
-    embeddings = np.zeros(shape=(0, 784))
+    embeddings = np.zeros(shape=(0, img_dim*img_dim))
     labels = np.zeros(shape=(0))
     thicknesses = np.zeros(shape=(0))
     for _, (data, metrics, target) in enumerate(data_loader):
         data, target = data.to(device), target.to(device)
         output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
         s = output.shape
-        output = output.reshape((s[0], 784))
+        output = output.reshape((s[0], img_dim*img_dim))
         labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
         thicknesses = np.concatenate((thicknesses, metrics['thickness']))
 
     return embeddings, thicknesses, labels
 
-def visualise_t_sne(test_loader, model, file_name):
-    embeddings, thicknesses, labels = _get_embeddings(model, test_loader)
+def visualise_t_sne(test_loader, model, img_dim, file_name):
+    embeddings, thicknesses, labels = _get_embeddings(model, test_loader, img_dim)
     
     feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)

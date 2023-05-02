@@ -10,7 +10,7 @@ from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
-def visualise_embeddings(model_path, test_dataset, in_channels, out_channels):
+def visualise_embeddings(model_path, test_dataset, in_channels, out_channels, img_dim):
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
@@ -18,7 +18,7 @@ def visualise_embeddings(model_path, test_dataset, in_channels, out_channels):
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
 
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    visualise_t_sne(test_loader, model, "plots/"+model_path+"t_sne")
+    visualise_t_sne(test_loader, model, img_dim, "plots/"+model_path+"t_sne")
 
 def visualise_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
@@ -28,7 +28,7 @@ def visualise_perturbed_mnist():
 
     for model in models:
         mnist_model_path = model + "_PERTURBED_MNIST"
-        visualise_embeddings(mnist_model_path, test_dataset, 1, 10)
+        visualise_embeddings(mnist_model_path, test_dataset, 1, 10, 28)
 
 def visualise_chestxray():
     models = ["BIASED"]
@@ -38,7 +38,7 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        visualise_embeddings(chestxray_model_path, test_dataset, 1, 2)
+        visualise_embeddings(chestxray_model_path, test_dataset, 1, 2, 192)
 
 # visualise_perturbed_mnist()
 visualise_chestxray()
