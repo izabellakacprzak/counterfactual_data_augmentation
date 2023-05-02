@@ -9,7 +9,7 @@ TRAIN_PERTURBED_FILE = "data/train_mnist_perturbed.pt"
 
 COUNTERFACTUALS_DATA = "../../DSCMv2/src/data/generated_counterfactuals.pt"
 COUNTERFACTUALS_METRICS = "../../DSCMv2/src/data/generated_counterfactuals_metrics.csv"
-CF_CHEST_DATA = "data/chestxray/generated_cfs_data.pt"
+CF_CHEST_DATA = "data/chestxray/generated_cfs_data.npy"
 CF_CHEST_METRICS = "data/chestxray/generated_cfs_metrics.csv"
 
 THIN_CLASSES = [0, 7, 8]

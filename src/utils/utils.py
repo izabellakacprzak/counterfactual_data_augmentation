@@ -11,7 +11,7 @@ import torchvision
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-from params import *
+from .params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
  
@@ -100,7 +100,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
             cf_data, cf_metrics = generate_cfs(train_data, amount=15600, do_r=1)
 
             # Save cf files
-            torch.save(cf_data, CF_CHEST_DATA)
+            np.save(CF_CHEST_DATA, np.array(cf_data, dtype=object), allow_pickle=True)
             keys = cf_metrics[0].keys()
             with open(CF_CHEST_METRICS, 'x', newline='') as output_file:
                 dict_writer = csv.DictWriter(output_file, keys)
@@ -108,7 +108,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
                 dict_writer.writerows(cf_metrics)
 
         else:
-            cf_data, cf_metrics = torch.load(CF_CHEST_DATA), pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
+            cf_data, cf_metrics = np.load(CF_CHEST_DATA, allow_pickle=True), pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]
             samples['age'].append(metrics['age'])

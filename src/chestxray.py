@@ -40,7 +40,7 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/chestxray/classifier_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, save_path, do_cf_reg, do_mixup)
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, torch.nn.BCELoss(), save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)
