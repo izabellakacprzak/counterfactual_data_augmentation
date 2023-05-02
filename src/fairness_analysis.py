@@ -56,7 +56,8 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
                     cfs.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                 else:
                     do_s, do_r, do_a = 'male', None, None
-                    cfs.append(_get_cf_for_chestxray(data[i][0], metrics[:][i], labels[i], do_s, do_r, do_a))
+                    ms = {k:vs[i] for k,vs in metrics.items()}
+                    cfs.append(_get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a))
 
             cfs = torch.stack(cfs)
             logits = model.model(cfs).cpu()
