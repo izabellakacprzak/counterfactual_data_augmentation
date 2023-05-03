@@ -61,7 +61,7 @@ def _add_noise(image, noise_type="gauss"):
         out[coords] = 0
         return out
    
-def _apply_debiasing_method(method, img):
+def apply_debiasing_method(method, img):
     if method == AugmentationMethod.OVERSAMPLING:
         return img
     elif method == AugmentationMethod.AUGMENTATIONS:
@@ -129,7 +129,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
                 samples['sex'].append(train_data['sex'][idx])
                 samples['race'].append(train_data['race'][idx])
                 samples['finding'].append(train_data['finding'][idx])
-                new_x = _apply_debiasing_method(method, train_data['x'][idx])
+                new_x = apply_debiasing_method(method, train_data['x'][idx])
                 samples['x'].append(new_x)
 
     return new_data

@@ -164,7 +164,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     pca_result_50 = pca_50.fit_transform(data_subset)
 
     time_start = time.time()
-    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=5000)
     tsne_pca_results = tsne.fit_transform(pca_result_50)
 
     print('[t-SNE]\tt-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))

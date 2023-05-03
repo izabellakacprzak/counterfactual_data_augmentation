@@ -9,6 +9,7 @@ import numpy as np
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet
+from utils.utils import apply_debiasing_method, AugmentationMethod
 from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -33,7 +34,7 @@ def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, cfs_per_sample=1):
+def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=1, do_cfs=True):
     X, Y = [], []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
         data = data.to(device)
@@ -45,29 +46,31 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, c
         # get probabilities for original data
         for _, prob in enumerate(probs):
             original_probs.append(prob[fairness_label])
-        print(original_probs) 
         # get probabilities for counterfactual data with interventions on specific attribute
-        for _ in range(cfs_per_sample):
+        for _ in range(perturbs_per_sample):
             X = X + original_probs
 
-            cfs = []
+            perturbed = []
             for i in range(len(data)):
-                if "MNIST" in run_name:
-                    cfs.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                if do_cfs:
+                    if "MNIST" in run_name:
+                        perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                    else:
+                        do_s, do_r, do_a = None, 1, None
+                        ms = {k:vs[i] for k,vs in metrics.items()}
+                        cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
+                        if len(cf) != 0: perturbed.append(torch.from_numpy(cf).to(device))
                 else:
-                    do_s, do_r, do_a = None, 1, None
-                    ms = {k:vs[i] for k,vs in metrics.items()}
-                    cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
-                    if len(cf) != 0: cfs.append(torch.from_numpy(cf).to(device))
+                    img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0])
+                    perturbed.append(torch.tensor(img).to(device))
 
-            cfs = torch.stack(cfs)
-            logits = model.model(cfs).cpu()
+            perturbed = torch.stack(perturbed)
+            logits = model.model(perturbed).cpu()
             probs = torch.nn.functional.softmax(logits, dim=1).tolist()
-            cf_probs = []
+            perturbed_probs = []
             for _, prob in enumerate(probs):
-                cf_probs.append(prob[fairness_label])
-            print(cf_probs)
-            Y = Y + cf_probs
+                perturbed_probs.append(prob[fairness_label])
+            Y = Y + perturbed_probs
 
     X = np.array(X)
     Y = np.array(Y)
