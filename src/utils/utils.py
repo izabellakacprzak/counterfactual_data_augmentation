@@ -68,7 +68,7 @@ def apply_debiasing_method(method, img):
         augmentation = random.choice(list(Augmentation))
         if augmentation == Augmentation.ROTATION:
             angle = random.randrange(-30, 30)
-            img = img.rotate(angle)
+            img = np.array(Image.fromarray(img).rotate(angle))
         # elif augmentation == Augmentation.FLIP_LEFT_RIGHT:
         #     img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
         # elif augmentation == Augmentation.FLIP_TOP_BOTTOM:
@@ -119,20 +119,20 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
         return samples
 
     # TODO: TEST!!!
-    new_data = []
-    for idx in range(len(train_data['x'])):
+    for idx in range(len(train_data)):
         # TODO: change the condition based on what to impact
-        if train_data['race'] == 1:
+        img, ms, lab = train_data[idx]
+        if ms['race'].item() == 1:
             for _ in range(10):
                 # TODO: make sure these are copied not referenced
-                samples['age'].append(train_data['age'][idx])
-                samples['sex'].append(train_data['sex'][idx])
-                samples['race'].append(train_data['race'][idx])
-                samples['finding'].append(train_data['finding'][idx])
-                new_x = apply_debiasing_method(method, train_data['x'][idx])
+                samples['age'].append(ms['age'])
+                samples['sex'].append(ms['sex'])
+                samples['race'].append(ms['race'])
+                samples['finding'].append(lab)
+                new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
                 samples['x'].append(new_x)
 
-    return new_data
+    return samples
 
 def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLING):
     if (method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and

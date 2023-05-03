@@ -8,7 +8,7 @@ import numpy as np
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from classifier import ConvNet
+from classifier import DenseNet
 from utils.utils import apply_debiasing_method, AugmentationMethod
 from utils.params import *
 
@@ -34,12 +34,12 @@ def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=1, do_cfs=True):
+def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=5, do_cfs=True):
     X, Y = [], []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
         data = data.to(device)
         labels = labels.to(device)
-        logits = model.model(data).cpu()
+        logits = model(data).cpu()
         probs = torch.nn.functional.softmax(logits, dim=1).tolist()
         original_probs = []
 
@@ -59,13 +59,15 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                         do_s, do_r, do_a = None, 1, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
-                        if len(cf) != 0: perturbed.append(torch.from_numpy(cf).to(device))
+                        if len(cf) != 0: perturbed.append(torch.tensor(cf).to(device)) 
                 else:
                     img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
                     perturbed.append(torch.tensor(img).to(device))
-
-            perturbed = torch.stack(perturbed).unsqueeze(1)
-            logits = model.model(perturbed).cpu()
+                    
+            perturbed = torch.stack(perturbed)
+            if not do_cfs:
+                perturbed = perturbed.unsqueeze(1)
+            logits = model(perturbed).cpu()
             probs = torch.nn.functional.softmax(logits, dim=1).tolist()
             perturbed_probs = []
             for _, prob in enumerate(probs):
@@ -74,31 +76,31 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
 
     X = np.array(X)
     Y = np.array(Y)
-
+    
     fig = plt.figure(run_name)
     plt.scatter(X,Y)
     plt.savefig("plots/fairness.png")
 
 def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label, do_cfs=True):
-    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
-    model.model.eval()
+    model.eval()
 
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     classifier_fairness_analysis(model, test_loader, model_path, fairness_label, do_cfs=do_cfs)
     
 def visualise_perturbed_mnist():
-    models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
-    
+    #models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+    models = ["AUGMENTATIONS"]
     transforms_list = transforms.Compose([transforms.ToTensor()])
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
     for model in models:
         mnist_model_path = model + "_PERTURBED_MNIST"
-        fairness_analysis(mnist_model_path, test_dataset, 1, 10, 0)
+        fairness_analysis(mnist_model_path, test_dataset, 1, 10, 0, False)
 
 def visualise_chestxray():
     models = ["BIASED"]
@@ -108,6 +110,6 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0, False)
+        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0)
 
 visualise_chestxray()

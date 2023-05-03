@@ -19,7 +19,8 @@ class DenseNet(torch.nn.Module):
         self.features.conv0 = nn.Conv2d(in_channels, 64, 7, 2, 3)
         self.classifier = nn.Linear(1024, out_channels, bias=True)
         del preloaded
-        
+        self = self.to(device)
+
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
