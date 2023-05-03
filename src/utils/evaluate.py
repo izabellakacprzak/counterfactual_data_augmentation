@@ -132,6 +132,7 @@ def _get_embeddings(model, data_loader, img_dim):
     labels = np.zeros(shape=(0))
     race = np.zeros(shape=(0))
     sex = np.zeros(shape=(0))
+    age = np.zeros(shape=(0))
     for _, (data, metrics, target) in enumerate(data_loader):
         data, target = data.to(device), target.to(device)
         output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
@@ -141,11 +142,12 @@ def _get_embeddings(model, data_loader, img_dim):
         embeddings = np.concatenate([embeddings, output],axis=0)
         race = np.concatenate((race, metrics['race'].tolist()))
         sex = np.concatenate((sex, metrics['sex'].tolist()))
+        age = np.concatenate((age, metrics['age'].tolist()))
 
-    return embeddings, race, sex, labels
+    return embeddings, race, sex, age, labels
 
 def visualise_t_sne(test_loader, model, img_dim, file_name):
-    embeddings, race, sex, labels = _get_embeddings(model, test_loader, img_dim)
+    embeddings, race, sex, age, labels = _get_embeddings(model, test_loader, img_dim)
     
     feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
     df = pd.DataFrame(embeddings, columns=feat_cols)
@@ -153,6 +155,20 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     df['race'] = race.astype(int)
     df['sex'] = sex.astype(int)
     df['label'] = df['y'].apply(lambda i: str(i))
+
+    age = age.astype(int)
+    for a in age:
+        if 18<=a<=25:
+            a = 0
+        elif 26<=a<=40:
+            a = 1
+        elif 41<=a<=65:
+            a = 2
+        elif 66<=a<=80:
+            a = 3
+        else:
+            a = 4
+    df['age'] = age
 
     N = 100000
     rndperm = np.random.permutation(df.shape[0])
@@ -207,3 +223,15 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     )
     fig = plot.get_figure()
     fig.savefig(file_name + "_sex.png") 
+
+    plt.figure(figsize=(16,10))
+    plot = sns.scatterplot(
+        x="tsne-pca50-one", y="tsne-pca50-two",
+        hue="age",
+        palette=sns.color_palette("hls", 10),
+        data=df_subset,
+        legend="full",
+        alpha=0.3
+    )
+    fig = plot.get_figure()
+    fig.savefig(file_name + "_age.png") 
