@@ -139,8 +139,8 @@ def _get_embeddings(model, data_loader, img_dim):
         output = output.reshape((s[0], img_dim*img_dim))
         labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
-        race = np.concatenate((race, metrics['race'].item()))
-        sex = np.concatenate((race, metrics['sex'].item()))
+        race = np.concatenate((race, metrics['race'].tolist()))
+        sex = np.concatenate((sex, metrics['sex'].tolist()))
 
     return embeddings, race, sex, labels
 
@@ -160,11 +160,11 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     data_subset = df_subset[feat_cols].values
 
     # reduce dimensions before feeding into t-SNE
-    pca_50 = PCA(n_components=50)
+    pca_50 = PCA(n_components=20)
     pca_result_50 = pca_50.fit_transform(data_subset)
 
     time_start = time.time()
-    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=5000)
+    tsne = TSNE(n_components=2, verbose=1, perplexity=80, n_iter=10000)
     tsne_pca_results = tsne.fit_transform(pca_result_50)
 
     print('[t-SNE]\tt-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
