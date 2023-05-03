@@ -2,7 +2,8 @@ import numpy as np
 import torch.nn as nn
 from torchvision.models import resnet152, ResNet152_Weights
 import torchvision.transforms as TF
-
+import torch.nn.functional as F
+import torchvision
 from utils.utils import mixup_data
 from utils.evaluate import get_confusion_matrix
 from utils.params import *
@@ -10,6 +11,22 @@ from sklearn.metrics import f1_score
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+class DenseNet(torch.nn.Module):
+    def __init__(self, in_channels=1, out_channels=2):
+        super().__init__()
+        preloaded = torchvision.models.densenet121(pretrained=True)
+        self.features = preloaded.features
+        self.features.conv0 = nn.Conv2d(in_channels, 64, 7, 2, 3)
+        self.classifier = nn.Linear(1024, out_channels, bias=True)
+        del preloaded
+        
+    def forward(self, x):
+        features = self.features(x)
+        out = F.relu(features, inplace=True)
+        out = F.adaptive_avg_pool2d(out, (1, 1)).view(features.size(0), -1)
+        out = self.classifier(out)
+        return out
+    
 class ConvNet(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ConvNet, self).__init__()

@@ -3,7 +3,7 @@ from torchvision import transforms
 from matplotlib import pyplot as plt
 import numpy as np
 from datasets.chestXRay import ChestXRay
-from classifier import ConvNet, train_and_evaluate
+from classifier import ConvNet, DenseNet, train_and_evaluate
 
 from utils.params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric, get_attribute_counts_chestxray
@@ -35,7 +35,8 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    # model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
 
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
