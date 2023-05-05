@@ -4,6 +4,8 @@ from torchvision.models import resnet152, ResNet152_Weights
 import torchvision.transforms as TF
 import torch.nn.functional as F
 import torchvision
+import torch.optim.lr_scheduler as lr_scheduler
+
 from utils.utils import mixup_data
 from utils.evaluate import get_confusion_matrix
 from utils.params import *
@@ -114,6 +116,7 @@ def test_classifier(model, test_loader, loss_fn):
 
 def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_cf_regularisation=False, do_mixup=False):
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    scheduler = lr_scheduler.LinearLR(optimiser, start_factor=1.0, end_factor=0.5, total_iters=EPOCHS)
     accs = []
     f1s = []
 

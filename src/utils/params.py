@@ -1,7 +1,7 @@
 import torch 
 
 LEARNING_RATE = 0.001
-EPOCHS = 15
+EPOCHS = 10
 LAMBDA = 1.0
 BATCH_SIZE = 32
 MSE = torch.nn.MSELoss()
