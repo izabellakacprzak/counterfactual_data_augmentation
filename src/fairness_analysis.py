@@ -8,7 +8,7 @@ import numpy as np
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from classifier import DenseNet
+from classifier import ConvNet, DenseNet
 from utils.utils import apply_debiasing_method, AugmentationMethod
 from utils.params import *
 
@@ -56,7 +56,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_s, do_r, do_a = None, 1, None
+                        do_s, do_r, do_a = None, 2, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
                         if len(cf) != 0: perturbed.append(torch.tensor(cf).to(device)) 
@@ -73,19 +73,33 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
             for _, prob in enumerate(probs):
                 perturbed_probs.append(prob[fairness_label])
             Y = Y + perturbed_probs
+    import os
+    os.remove("originals.txt")    
+    os.remove('cfs.txt')
+    with open('originals.txt', 'x') as fp:
+        for item in X:
+            # write each item on a new line
+            fp.write("%s\n" % item)
+    
+    with open('cfs.txt', 'x') as fp:
+        for item in Y:
+            # write each item on a new line
+            fp.write("%s\n" % item)
+    print('Done')
 
     X = np.array(X)
     Y = np.array(Y)
     
     fig = plt.figure(run_name)
     plt.scatter(X,Y)
-    plt.savefig("plots/fairness.png")
+    plt.savefig("plots/fairness_std_aug.png")
 
 def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label, do_cfs=True):
-    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
     if "MNIST" in model_path:
+        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
+        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
     model.eval()
 
@@ -110,6 +124,7 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0)
+        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0, False)
 
+#visualise_perturbed_mnist()
 visualise_chestxray()

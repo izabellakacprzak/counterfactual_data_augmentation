@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from classifier import ConvNet, test_classifier
+from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -84,7 +84,9 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
     ## Test pretrained model ##
-    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
+    #model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    
     if "MNIST" in model_path:
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
