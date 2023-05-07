@@ -89,12 +89,14 @@ def test_classifier(model, test_loader, loss_fn):
     correct = 0
     y_true = []
     y_pred = []
+    y_score = []
     attr_true = []
     with torch.no_grad():
         for data, metrics, target in test_loader:
             data = data.to(device)
             target = target.to(device)
             output = model(data)
+            y_score += output.cpu()
             test_loss += loss_fn(output, target)
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
@@ -112,7 +114,7 @@ def test_classifier(model, test_loader, loss_fn):
     print('[Test loop]\tF1 score: ' + str(f1))
     print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
-    return y_pred, y_true, attr_true, acc, f1
+    return y_pred, y_true, y_score, attr_true, acc, f1
 
 def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_cf_regularisation=False, do_mixup=False):
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -121,14 +123,14 @@ def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_
     f1s = []
 
     for epoch in range(1, EPOCHS):
-        _, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
+        _, _, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
         accs.append(acc)
         f1s.append(f1)
 
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
         torch.save(model.state_dict(), save_path)
 
-    y_pred, y_true, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
+    y_pred, y_true, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
     accs.append(acc)
     f1s.append(f1)
 

@@ -189,7 +189,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     df_subset['tsne-pca50-two'] = tsne_pca_results[:,1]
 
     plt.figure(figsize=(16,10))
-    plot = sns.scatterplot(
+    plot = sns.jointplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="y",
         palette=sns.color_palette("tab10", 10),
@@ -201,7 +201,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     fig.savefig(file_name + "_labels.png") 
 
     plt.figure(figsize=(16,10))
-    plot = sns.scatterplot(
+    plot = sns.jointplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="race",
         palette=sns.color_palette("hls", 10),
@@ -213,7 +213,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     fig.savefig(file_name + "_race.png") 
 
     plt.figure(figsize=(16,10))
-    plot = sns.scatterplot(
+    plot = sns.jointplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="sex",
         palette=sns.color_palette("hls", 10),
@@ -225,7 +225,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     fig.savefig(file_name + "_sex.png") 
 
     plt.figure(figsize=(16,10))
-    plot = sns.scatterplot(
+    plot = sns.jointplot(
         x="tsne-pca50-one", y="tsne-pca50-two",
         hue="age",
         palette=sns.color_palette("hls", 10),

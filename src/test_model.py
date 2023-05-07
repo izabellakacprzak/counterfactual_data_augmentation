@@ -4,7 +4,8 @@ from torchvision import transforms
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import f1_score
+from sklearn.metrics import roc_auc_score
+
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
@@ -64,11 +65,13 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
                 else:
                     fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
 
+        metrics_per_attribute = {'accuracy':{}, 'f1':{}}
         # Accuracy per attribute value
         print("Accuracy for " + str(attribute))
         for av in unique_attr_values:
             div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
             acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div 
+            metrics_per_attribute['accuracy'][av] = acc
             print("Accuracy value for {}: {}".format(av, str(acc)))
 
         # F1-score per attribute value
@@ -76,6 +79,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         for av in unique_attr_values:
             div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
             f1 = 0 if div==0 else tp_unique[av]/div
+            metrics_per_attribute['f1'][av] = f1
             print("F1-score value for {}: {}".format(av, str(f1)))
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
@@ -88,13 +92,17 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    y_pred, y_true, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
+    y_pred, y_true, metrics_true, y_score, acc, f1 = test_classifier(model, test_loader, loss_fn)
 
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
     # Get accuracy separetely #
     matrix = metrics.confusion_matrix(y_true, y_pred)
     accs = matrix.diagonal()/matrix.sum(axis=1)
+
+    roc_auc = roc_auc_score(y_true, y_score)
+    print("AUC score")
+    print(roc_auc)
 
     f1s = []
     precisions = []
