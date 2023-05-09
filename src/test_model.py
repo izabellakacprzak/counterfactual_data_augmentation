@@ -15,6 +15,25 @@ from utils.params import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
+def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric, metric_name):
+    num_subgroups = len(subgroup_names)
+    _ = plt.figure(metric_name)
+    width = 0.35
+
+    _, ax = plt.subplots()
+    values = [m-avg_metric for m in subgroup_metrics]
+    _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')
+
+    ax.set_xlabel("Subgroups")
+    ax.set_ylabel(metric_name)
+    ax.set_xticks(np.arange(num_subgroups) + width)
+    ax.set_xticklabels(subgroup_names)
+
+    # Create a horizontal line at the origin
+    ax.axhline(y=0, color='black')
+    plt.show()
+
+
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
     fig = plt.figure(metric_name)
     num_classes = len(run_metrics[0])
@@ -39,6 +58,9 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
 
 def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
+    subgroup_names = []
+    accuracies = []
+    f1s = []
     for idx, attribute in enumerate(attributes):
         if attribute == 'thickness':
             continue
@@ -65,22 +87,22 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
                 else:
                     fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
 
-        metrics_per_attribute = {'accuracy':{}, 'f1':{}}
-        # Accuracy per attribute value
-        print("Accuracy for " + str(attribute))
         for av in unique_attr_values:
-            div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
-            acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div 
-            metrics_per_attribute['accuracy'][av] = acc
-            print("Accuracy value for {}: {}".format(av, str(acc)))
+            # save subgroup name
+            subgroup_names.append("{} {}".format(attribute, str(av)))
 
-        # F1-score per attribute value
-        print("F1-score for " + str(attribute))
-        for av in unique_attr_values:
+            # save accuracy value
+            div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
+            acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div
+            accuracies.append(acc)
+
+            # save f1 score values
             div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
             f1 = 0 if div==0 else tp_unique[av]/div
-            metrics_per_attribute['f1'][av] = f1
-            print("F1-score value for {}: {}".format(av, str(f1)))
+            f1s.append(f1)
+
+    return subgroup_names, accuracies, f1s
+
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
     ## Test pretrained model ##
@@ -106,6 +128,11 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
     print("AUC score")
     print(roc_auc)
 
+    ## Print performance metrics per attribute (eg. sex, digit etc) ##
+    subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+    plot_metric_subgroup_comparison(subgroup_names, accuracies, report_dict['accuracy'], "Accuracy")
+    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['weighted avg']['f1-score'], "F1-score")
+
     f1s = []
     precisions = []
     recalls = []
@@ -114,18 +141,6 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         f1s.append(report_dict[label]['f1-score'])
         precisions.append(report_dict[label]['precision'])
         recalls.append(report_dict[label]['recall'])
-
-    print("Accuracies")
-    print(accs)
-    print("F1-scores")
-    print(f1s)
-    print("Precisoins")
-    print(precisions)
-    print("Recalls")
-    print(recalls)
-
-    ## Print performance metrics per attribute (eg. age, thickness etc) ##
-    metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
 
     return accs, f1s, precisions, recalls
 
@@ -148,6 +163,15 @@ def test_perturbed_mnist():
         attributes = ['thickness', 'intensity', 'bias_aligned']
         loss_fn = torch.nn.CrossEntropyLoss()
         acc, f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+
+        print("Accuracies")
+        print(acc)
+        print("F1-scores")
+        print(fs)
+        print("Precisoins")
+        print(precision)
+        print("Recalls")
+        print(recall)
 
         accs.append(acc)
         f1s.append(f1)
