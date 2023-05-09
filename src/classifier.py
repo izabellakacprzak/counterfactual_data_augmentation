@@ -96,7 +96,8 @@ def test_classifier(model, test_loader, loss_fn):
             data = data.to(device)
             target = target.to(device)
             output = model(data)
-            y_score += output.cpu()
+            probs = F.softmax(output, dim=1).tolist()
+            y_score += probs
             test_loss += loss_fn(output, target)
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
@@ -128,6 +129,7 @@ def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_
         f1s.append(f1)
 
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
+        scheduler.step()
         torch.save(model.state_dict(), save_path)
 
     y_pred, y_true, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
