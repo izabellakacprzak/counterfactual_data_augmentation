@@ -13,18 +13,31 @@ from sklearn.metrics import f1_score
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def regularisation(model, x, metrics, labels, logits):
-        from dscm.generate_counterfactuals import generate_counterfactual_for_x
-        cfs = []
-        for i in range(len(x)):
-            img = x[i][0].float() * 254
-            img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
-            x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
-            cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
-        
-        cfs = torch.stack(cfs)
-        logits_cf = model(cfs)
-        return LAMBDA * MSE(logits, logits_cf)
+def mnist_regularisation(model, x, metrics, labels, logits):
+    from dscm.generate_counterfactuals import generate_counterfactual_for_x
+    cfs = []
+    for i in range(len(x)):
+        img = x[i][0].float() * 254
+        img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
+        x_cf = generate_counterfactual_for_x(img, metrics['thickness'][i], metrics['intensity'][i], labels[i])
+        cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
+    
+    cfs = torch.stack(cfs)
+    logits_cf = model(cfs)
+    return LAMBDA * MSE(logits, logits_cf)
+
+def chestxray_regularisation(model, x, metrics, labels, logits):
+    from dscmchest.generate_counterfactuals import generate_cf
+    cfs = []
+    for i in range(len(x)):
+        obs = {'x':x[0][i], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
+        do_s, do_a, do_r = None, None, None
+        x_cf = generate_cf(obs, do_s, do_a, do_r)
+        cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
+    
+    cfs = torch.stack(cfs)
+    logits_cf = model(cfs)
+    return LAMBDA * MSE(logits, logits_cf)
 
 class DenseNet(torch.nn.Module):
     def __init__(self, in_channels=1, out_channels=2):
@@ -42,6 +55,9 @@ class DenseNet(torch.nn.Module):
         out = F.adaptive_avg_pool2d(out, (1, 1)).view(features.size(0), -1)
         out = self.classifier(out)
         return out
+    
+    def regularisation(self, data, metrics, target, logits):
+        chestxray_regularisation(self, data, metrics, target, logits)
         
     
 class ConvNet(torch.nn.Module):
@@ -60,6 +76,9 @@ class ConvNet(torch.nn.Module):
 
     def forward(self, x):
         return self.model(x)
+    
+    def regularisation(self, data, metrics, target, logits):
+        mnist_regularisation(self, data, metrics, target, logits)
 
 def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do_cf_regularisation=False):
     model.train()
@@ -75,7 +94,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do
             logits = model(data)    
             loss = loss_fn(logits, target)
             if do_cf_regularisation:
-                loss += regularisation(model, data, metrics, target, logits)
+                loss += model.regularisation(data, metrics, target, logits)
 
         loss.backward()
         optimiser.step()
