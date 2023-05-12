@@ -116,7 +116,7 @@ def test_classifier(model, test_loader, loss_fn):
             data = data.to(device)
             target = target.to(device)
             output = model(data)
-            y_score += output.cpu()
+            y_score += torch.nn.functional.softmax(output, dim=1).tolist()
             test_loss += loss_fn(output, target)
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
