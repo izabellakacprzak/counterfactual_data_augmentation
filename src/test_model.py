@@ -116,7 +116,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    y_pred, y_true, metrics_true, y_score, acc, f1 = test_classifier(model, test_loader, loss_fn)
+    y_pred, y_true, y_score, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
 
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
