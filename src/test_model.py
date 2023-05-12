@@ -58,6 +58,22 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     
     plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
 
+def _preprocess_age(metrics):
+    processed_metrics = []
+    for m in metrics:
+        if 0 <= m <= 19:
+            processed_metrics.append(0)
+        elif 20 <= m <= 39:
+            processed_metrics.append(1)
+        elif 40 <= m <= 59:
+            processed_metrics.append(2)
+        elif 60 <= m <= 79:
+            processed_metrics.append(3)
+        elif 80 <= m <= 100:
+            processed_metrics.append(4)
+
+    return processed_metrics
+
 def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     subgroup_names = []
     accuracies = []
@@ -66,6 +82,8 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         if attribute in ['thickness', 'sex', 'race']:
             continue
 
+        if attribute == 'age':
+            metrics_true = _preprocess_age(metrics_true)
         attr_values = metrics_true[idx]
         unique_attr_values = set(attr_values)
 
