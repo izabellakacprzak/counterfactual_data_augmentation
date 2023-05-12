@@ -15,10 +15,10 @@ from utils.params import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
-def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric, metric_name):
+def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric, metric_name, run_name):
     num_subgroups = len(subgroup_names)
     _ = plt.figure(metric_name)
-    width = 0.35
+    width = 0.4
 
     _, ax = plt.subplots()
     values = [m-avg_metric for m in subgroup_metrics]
@@ -26,12 +26,13 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
 
     ax.set_xlabel("Subgroups")
     ax.set_ylabel(metric_name)
+    plt.xticks(rotation=45, ha='right')
     ax.set_xticks(np.arange(num_subgroups) + width)
     ax.set_xticklabels(subgroup_names)
 
     # Create a horizontal line at the origin
     ax.axhline(y=0, color='black')
-    plt.show()
+    plt.savefig("plots/" + run_name + "/metrics_subgroup_comparison_"+ metric_name +".png")
 
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
@@ -62,7 +63,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     accuracies = []
     f1s = []
     for idx, attribute in enumerate(attributes):
-        if attribute == 'thickness':
+        if attribute in ['thickness', 'sex', 'race']:
             continue
 
         attr_values = metrics_true[idx]
@@ -105,33 +106,35 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
 
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
-    ## Test pretrained model ##
-    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
-    #model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-    
+    ## Test pretrained model ## 
     if "MNIST" in model_path:
+        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
+        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
-
+        
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     y_pred, y_true, y_score, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
 
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
+    print(report_dict)
+
     # Get accuracy separetely #
     matrix = metrics.confusion_matrix(y_true, y_pred)
     accs = matrix.diagonal()/matrix.sum(axis=1)
 
+    y_score = [p[1] for p in y_score]
     roc_auc = roc_auc_score(y_true, y_score)
     print("AUC score")
     print(roc_auc)
 
     ## Print performance metrics per attribute (eg. sex, digit etc) ##
     subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
-    plot_metric_subgroup_comparison(subgroup_names, accuracies, report_dict['accuracy'], "Accuracy")
-    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['weighted avg']['f1-score'], "F1-score")
+    plot_metric_subgroup_comparison(subgroup_names, accuracies, report_dict['accuracy'], "Accuracy", model_path)
+    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['weighted avg']['f1-score'], "F1-score", model_path)
 
     f1s = []
     precisions = []
@@ -184,7 +187,7 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BIASED"]
+    models = ["BIASED", "COUNTERFACTUALS"]
     accs = []
     f1s = []
     precisions = []
@@ -200,7 +203,7 @@ def test_chestxray():
         in_channels = 1
         num_classes = 2
         attributes = ['sex', 'age', 'race']
-        loss_fn = torch.nn.BCELoss()
+        loss_fn = torch.nn.CrossEntropyLoss()
         acc, f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
         accs.append(acc)
