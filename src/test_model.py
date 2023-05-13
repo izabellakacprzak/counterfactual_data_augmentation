@@ -20,9 +20,6 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     _ = plt.figure(metric_name)
     width = 0.4
 
-    # average metric as the weighted average of all subgroup metrics
-    avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
-    
     _, ax = plt.subplots()
     values = [m-avg_metric for m in subgroup_metrics]
     _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')

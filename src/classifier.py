@@ -28,12 +28,14 @@ def mnist_regularisation(model, x, metrics, labels, logits):
 
 def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
-
-    batch = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
-    do_s, do_r, do_a = None, 2, None
-    x_cf, _ = generate_cf(batch, do_s, do_r, do_a)
-    cfs = torch.from_numpy(x_cf).float().to(device)
+    cfs = []
+    for i in range(len(x)):
+        obs = {'x':x[i][0], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
+        do_s, do_r, do_a = None, 2, None
+        x_cf, _ = generate_cf(obs, do_s, do_r, do_a)
+        cfs.append(torch.from_numpy(x_cf).float().to(device))
     
+    cfs = torch.stack(cfs)
     logits_cf = model(cfs)
     return LAMBDA * MSE(logits, logits_cf)
 
