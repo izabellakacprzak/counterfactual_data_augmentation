@@ -79,12 +79,13 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     accuracies = []
     f1s = []
     for idx, attribute in enumerate(attributes):
-        if attribute in ['thickness', 'sex', 'race']:
+        if attribute in ['thickness']:
             continue
 
-        if attribute == 'age':
-            metrics_true = _preprocess_age(metrics_true)
         attr_values = metrics_true[idx]
+        if attribute == 'age':
+            attr_values = _preprocess_age(attr_values)
+        
         unique_attr_values = set(attr_values)
 
         # unique_counts = {u:0 for u in unique_attr_values}

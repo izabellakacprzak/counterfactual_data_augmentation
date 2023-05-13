@@ -31,8 +31,8 @@ def chestxray_regularisation(model, x, metrics, labels, logits):
     cfs = []
     for i in range(len(x)):
         obs = {'x':x[0][i], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
-        do_s, do_a, do_r = None, None, None
-        x_cf = generate_cf(obs, do_s, do_a, do_r)
+        do_s, do_r, do_a = None, 2, None
+        x_cf = generate_cf(obs, do_s, do_r, do_a)
         cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
     
     cfs = torch.stack(cfs)

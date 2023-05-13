@@ -56,7 +56,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_s, do_r, do_a = None, 2, None
+                        do_s, do_r, do_a = None, None, 0
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
                         if len(cf) != 0: perturbed.append(torch.tensor(cf).to(device)) 
@@ -92,7 +92,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
     
     fig = plt.figure(run_name)
     plt.scatter(X,Y)
-    plt.savefig("plots/fairness_std_aug.png")
+    plt.savefig("plots/fairness_age_0-19.png")
 
 def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label, do_cfs=True):
     if "MNIST" in model_path:
@@ -124,7 +124,7 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0, False)
+        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0)
 
 #visualise_perturbed_mnist()
 visualise_chestxray()
