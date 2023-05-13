@@ -30,10 +30,10 @@ def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
     cfs = []
     for i in range(len(x)):
-        obs = {'x':x[0][i], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
+        obs = {'x':x[i][0], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
         do_s, do_r, do_a = None, 2, None
-        x_cf = generate_cf(obs, do_s, do_r, do_a)
-        cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
+        x_cf, _ = generate_cf(obs, do_s, do_r, do_a)
+        cfs.append(torch.from_numpy(x_cf).float().to(device))
     
     cfs = torch.stack(cfs)
     logits_cf = model(cfs)
@@ -57,7 +57,7 @@ class DenseNet(torch.nn.Module):
         return out
     
     def regularisation(self, data, metrics, target, logits):
-        chestxray_regularisation(self, data, metrics, target, logits)
+        return chestxray_regularisation(self, data, metrics, target, logits)
         
     
 class ConvNet(torch.nn.Module):
@@ -78,7 +78,7 @@ class ConvNet(torch.nn.Module):
         return self.model(x)
     
     def regularisation(self, data, metrics, target, logits):
-        mnist_regularisation(self, data, metrics, target, logits)
+        return mnist_regularisation(self, data, metrics, target, logits)
 
 def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do_cf_regularisation=False):
     model.train()
