@@ -3,7 +3,7 @@ import torch
 LEARNING_RATE = 0.001
 EPOCHS = 12
 LAMBDA = 1.0
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 MSE = torch.nn.MSELoss()
 TRAIN_PERTURBED_FILE = "data/train_mnist_perturbed.pt"
 

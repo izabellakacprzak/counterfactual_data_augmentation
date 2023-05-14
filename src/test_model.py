@@ -1,4 +1,5 @@
 import torch
+import os
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn import metrics
@@ -21,6 +22,12 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     width = 0.4
 
     _, ax = plt.subplots()
+    
+    print(metric_name)
+    print(subgroup_names)
+    print(subgroup_metrics)
+
+    avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
     values = [m-avg_metric for m in subgroup_metrics]
     _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')
 
@@ -32,7 +39,10 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
 
     # Create a horizontal line at the origin
     ax.axhline(y=0, color='black')
-    plt.savefig("plots/" + run_name + "/metrics_subgroup_comparison_"+ metric_name +".png")
+    save_dir = 'plots/metrics_comp/{}'.format(run_name)
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    plt.savefig(save_dir+"/subgroups_"+ metric_name +".png")
 
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
@@ -55,8 +65,11 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     plt.xticks(np.arange(num_classes) + width/2, np.arange(num_classes))
     plt.yticks(np.arange(0, 1.1, 0.05))
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2))
-    
-    plt.savefig("plots/metrics_comparison_"+ metric_name +".png")
+   
+    save_dir = 'plots/metrics_comp/'
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    plt.savefig(save_dir+ metric_name +".png")
 
 def _preprocess_age(metrics):
     processed_metrics = []
@@ -206,7 +219,7 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BIASED", "COUNTERFACTUALS"]
+    models = ["BIASED", "COUNTERFACTUALS_race2"]
     accs = []
     f1s = []
     precisions = []
