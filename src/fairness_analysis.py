@@ -22,14 +22,14 @@ def _get_cf_for_mnist(img, thickness, intensity, label):
     x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
     return torch.from_numpy(x_cf).unsqueeze(0).float()
 
-def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
+def _get_cf_for_chestxray(img, metrics, label, do_a, do_r, do_s):
     from dscmchest.generate_counterfactuals import generate_cf
     obs = {'x': img,
            'age': metrics['age'],
            'race': metrics['race'],
            'sex': metrics['sex'],
            'finding': label}
-    cf, cf_metrics = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
+    cf, cf_metrics = generate_cf(obs, do_a=do_a, do_r=do_r, do_s=do_s)
     return cf, cf_metrics
 
 # Generates a scatterplot of how similar predictions made by classifier 
@@ -57,9 +57,9 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_s, do_r, do_a = None, 2, None
+                        do_a, do_r, do_s = None, 2, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
-                        cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
+                        cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_r, do_s)
                         if len(cf_metrics) != 0: perturbed.append(torch.tensor(cf).to(device)) 
                 else:
                     img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
