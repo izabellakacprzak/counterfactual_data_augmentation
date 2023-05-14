@@ -34,7 +34,7 @@ def visualise_chestxray():
     models = ["BIASED"]
 
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
-    test_dataset = ChestXRay(train=False, transform=transforms_list)
+    test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"

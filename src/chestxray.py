@@ -23,14 +23,16 @@ transforms_list = transforms.Compose([transforms.Resize((192,192)),])
 def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     runs_arr.append(run_name)
     print("[ChestXRay train]\t" + run_name)
-    train_dataset = ChestXRay(train=True, transform=transforms_list, method=debiasing_method)
+    train_dataset = ChestXRay(mode="train", transform=transforms_list, method=debiasing_method)
     # get_attribute_counts_chestxray(train_dataset)
     # print_classes_size(train_dataset)
     # count_thick_thin_per_class(train_dataset.datas)
     # plot_dataset_digits(train_dataset)
-    test_dataset = ChestXRay(train=False, transform=transforms_list)
+    valid_dataset = ChestXRay(mode="val", transform=transforms_list)
+    test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
@@ -39,7 +41,7 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/chestxray/classifier_resnet_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)

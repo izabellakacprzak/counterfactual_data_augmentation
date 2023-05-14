@@ -21,6 +21,8 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     width = 0.4
 
     _, ax = plt.subplots()
+    avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
+
     values = [m-avg_metric for m in subgroup_metrics]
     _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')
 
@@ -213,7 +215,7 @@ def test_chestxray():
     recalls = []
     
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
-    test_dataset = ChestXRay(train=False, transform=transforms_list)
+    test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
     for model in models:
         print("[Test trained]\tTesting model: " + model)

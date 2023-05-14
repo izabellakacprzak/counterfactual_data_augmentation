@@ -25,14 +25,12 @@ def norm(batch):
     return batch
 
 class ChestXRay(datasets.VisionDataset):
-  def __init__(self, train=True, transform=None, target_transform=None, method=AugmentationMethod.NONE):
+  def __init__(self, mode="train", transform=None, target_transform=None, method=AugmentationMethod.NONE):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
-    csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + ("train" if train else "test") + ".csv"
-    if train:
-        self.data = pd.read_csv(csv_file)
-    else:
-        self.data = pd.read_csv(csv_file)
+    csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
+    self.data = pd.read_csv(csv_file)
+
     self.transform = transform
     self.labels = [
         'No Finding',

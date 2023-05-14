@@ -37,7 +37,7 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/mnist/classifier_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)

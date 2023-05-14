@@ -137,23 +137,24 @@ def test_classifier(model, test_loader, loss_fn):
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, y_score, attr_true, acc, f1
 
-def train_and_evaluate(model, train_loader, test_loader, loss_fn, save_path, do_cf_regularisation=False, do_mixup=False):
+def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_cf_regularisation=False, do_mixup=False):
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = lr_scheduler.LinearLR(optimiser, start_factor=1.0, end_factor=0.5, total_iters=EPOCHS)
     accs = []
     f1s = []
 
+    _, _, _, _, acc_pred, f1 = test_classifier(model, valid_loader, loss_fn)
+    accs.append(acc_pred)
+    f1s.append(f1)
     for epoch in range(1, EPOCHS):
-        _, _, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
-        accs.append(acc)
-        f1s.append(f1)
-
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
         scheduler.step()
+        _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn)
+        if acc < acc_pred:
+            break
         torch.save(model.state_dict(), save_path)
+        acc_pred = acc
 
-    y_pred, y_true, _, _, acc, f1 = test_classifier(model, test_loader, loss_fn)
-    accs.append(acc)
-    f1s.append(f1)
+    y_pred, y_true, _, _, _, _ = test_classifier(model, test_loader, loss_fn)
 
     return accs, f1s, y_pred, y_true
