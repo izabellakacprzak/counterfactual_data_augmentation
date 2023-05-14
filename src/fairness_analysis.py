@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as TF
 from tqdm import tqdm
 import numpy as np
+import os
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
@@ -28,8 +29,8 @@ def _get_cf_for_chestxray(img, metrics, label, do_s, do_r, do_a):
            'race': metrics['race'],
            'sex': metrics['sex'],
            'finding': label}
-    cf, _ = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
-    return cf
+    cf, cf_metrics = generate_cf(obs, do_s=do_s, do_r=do_r, do_a=do_a)
+    return cf, cf_metrics
 
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
@@ -58,8 +59,8 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     else:
                         do_s, do_r, do_a = None, 2, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
-                        cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
-                        if len(cf) != 0: perturbed.append(torch.tensor(cf).to(device)) 
+                        cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_s, do_r, do_a)
+                        if len(cf_metrics) != 0: perturbed.append(torch.tensor(cf).to(device)) 
                 else:
                     img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
                     perturbed.append(torch.tensor(img).to(device))
@@ -67,13 +68,14 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
             perturbed = torch.stack(perturbed)
             if not do_cfs:
                 perturbed = perturbed.unsqueeze(1)
+
             logits = model(perturbed).cpu()
             probs = torch.nn.functional.softmax(logits, dim=1).tolist()
             perturbed_probs = []
             for _, prob in enumerate(probs):
                 perturbed_probs.append(prob[fairness_label])
             Y = Y + perturbed_probs
-    import os
+
     os.remove("originals.txt")    
     os.remove('cfs.txt')
     with open('originals.txt', 'x') as fp:
