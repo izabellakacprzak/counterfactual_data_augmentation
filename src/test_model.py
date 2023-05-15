@@ -16,8 +16,7 @@ from utils.params import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
-def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names):
-    colors 
+def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names): 
     num_subgroups = len(subgroup_names)
     _ = plt.figure(metric_name)
     width = 0.8
@@ -30,8 +29,8 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
 
     ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green'])
     for idx, run in enumerate(run_names):
-        values = [m-averages[idx] for m in subgroup_metrics[idx]]
-        _ = ax.bar(np.arange(num_subgroups), values, width/(len(values)), label=run)
+        values = [m-averages[idx][1] for m in subgroup_metrics[idx]]
+        _ = ax.bar(np.arange(num_subgroups)+(width/len(run_names)*idx), values, width/(len(run_names)), label=run)
 
     ax.set_xlabel("Subgroups")
     ax.set_ylabel(metric_name)
@@ -146,7 +145,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
-        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
         
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -245,9 +244,9 @@ def test_chestxray():
         recalls.append(recall)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
-        subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
-        attr_accs.append(accuracies)
-        attr_f1s.append(f1s)
+        subgroup_names, attr_acc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        attr_accs.append(attr_acc)
+        attr_f1s.append(attr_f1)
 
 
     plot_metrics_comparison(models, accs, 'CHESTXRAYaccuracy')
