@@ -166,11 +166,11 @@ def get_label_metrics(y_true, y_pred, y_score, num_classes):
 
     matrix = metrics.confusion_matrix(y_true, y_pred)
     accs = matrix.diagonal()/matrix.sum(axis=1)
-    f1s = [report_dict[label]['f1-score'] for label in range(num_classes)]
-    precisions = [report_dict[label]['precision'] for label in range(num_classes)]
-    recalls = [report_dict[label]['recall'] for label in range(num_classes)]
+    f1s = [report_dict[str(label)]['f1-score'] for label in range(num_classes)]
+    precisions = [report_dict[str(label)]['precision'] for label in range(num_classes)]
+    recalls = [report_dict[str(label)]['recall'] for label in range(num_classes)]
 
-    return accs, f1s, precisions, recalls
+    return accs, f1s, precisions, recalls, report_dict['accuracy'], report_dict['weighted avg']['f1-score']
 
 def test_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
@@ -193,7 +193,7 @@ def test_perturbed_mnist():
         mnist_model_path = model + "_PERTURBED_MNIST"
         _, y_true, y_pred, y_score = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
-        acc, f1, precision, recall = get_label_metrics(y_true, y_pred, y_score, num_classes)
+        acc, f1, precision, recall, _, _ = get_label_metrics(y_true, y_pred, y_score, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
@@ -217,6 +217,8 @@ def test_chestxray():
     recalls = []
     attr_accs = []
     attr_f1s = []
+    overall_accs = []
+    overall_f1s = []
     
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
@@ -227,11 +229,13 @@ def test_chestxray():
         chestxray_model_path = model + "_CHESTXRAY"
         metrics_true, y_true, y_pred, y_score = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
-        acc, f1, precision, recall = get_label_metrics(y_true, y_pred, y_score, num_classes)
+        acc, f1, precision, recall, overall_acc, overall_f1 = get_label_metrics(y_true, y_pred, y_score, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
+        overall_accs.append(overall_acc)
+        overall_f1s.append(overall_f1)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
         subgroup_names, attr_acc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
@@ -244,8 +248,8 @@ def test_chestxray():
     plot_metrics_comparison(models, precisions, 'CHESTXRAYprecision')
     plot_metrics_comparison(models, recalls, 'CHESTXRAYrecall')
 
-    plot_metric_subgroup_comparison(subgroup_names, attr_accs, accs, "Accuracy", models)
-    plot_metric_subgroup_comparison(subgroup_names, attr_f1s, f1s, "F1-score", models)
+    plot_metric_subgroup_comparison(subgroup_names, attr_accs, overall_accs, "Accuracy", models)
+    plot_metric_subgroup_comparison(subgroup_names, attr_f1s, overall_f1s, "F1-score", models)
 
 # test_perturbed_mnist()
 test_chestxray()
