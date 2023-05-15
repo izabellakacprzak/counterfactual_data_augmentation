@@ -35,12 +35,12 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-    #model = DenseNet(in_channels=in_channels, out_channels=out_channels)
+    #model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+    model = DenseNet(in_channels=in_channels, out_channels=out_channels)
 
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
-    save_path = "../checkpoints/chestxray/classifier_resnet_" + run_name + ".pt"
+    save_path = "../checkpoints/chestxray/classifier_" + run_name + ".pt"
     accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
@@ -59,7 +59,7 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
 train_chestxray("BIASED_CHESTXRAY")
 # train_chestxray("OVERSAMPLING_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
 # train_chestxray("AUGMENTATIONS_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
-# train_chestxray("COUNTERFACTUALS_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
+train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
 # train_chestxray("CFREGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
 
 ############################################################

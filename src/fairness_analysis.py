@@ -35,7 +35,7 @@ def _get_cf_for_chestxray(img, metrics, label, do_a, do_r, do_s):
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=5, do_cfs=True):
+def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=3, do_cfs=True):
     X, Y = [], []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
         data = data.to(device)
@@ -57,7 +57,7 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_a, do_r, do_s = None, 2, None
+                        do_a, do_r, do_s = 0, None, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_r, do_s)
                         if len(cf_metrics) != 0: perturbed.append(torch.tensor(cf).to(device)) 
@@ -101,7 +101,7 @@ def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairn
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
-        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
+        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
     model.eval()
 
@@ -119,7 +119,7 @@ def visualise_perturbed_mnist():
         fairness_analysis(mnist_model_path, test_dataset, 1, 10, 0, False)
 
 def visualise_chestxray():
-    models = ["BIASED", "COUNTERFACYUALS_race2"]
+    models = ["COUNTERFACTUALS_age_0"]
 
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)

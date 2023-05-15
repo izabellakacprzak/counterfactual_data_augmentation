@@ -27,7 +27,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     print(subgroup_names)
     print(subgroup_metrics)
 
-    avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
+    # avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
     values = [m-avg_metric for m in subgroup_metrics]
     _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')
 
@@ -35,7 +35,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     ax.set_ylabel(metric_name)
     plt.xticks(rotation=45, ha='right')
     ax.set_xticks(np.arange(num_subgroups) + width)
-    ax.set_xticklabels(subgroup_names)
+    ax.set_xticklabels(['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black'])
 
     # Create a horizontal line at the origin
     ax.axhline(y=0, color='black')
@@ -143,7 +143,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
     else:
-        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
+        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
         
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -157,7 +157,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
     # Get accuracy separetely #
     matrix = metrics.confusion_matrix(y_true, y_pred)
     accs = matrix.diagonal()/matrix.sum(axis=1)
-
+    print(accs)
     y_score = [p[1] for p in y_score]
     roc_auc = roc_auc_score(y_true, y_score)
     print("AUC score")
@@ -165,8 +165,8 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     ## Print performance metrics per attribute (eg. sex, digit etc) ##
     subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
-    plot_metric_subgroup_comparison(subgroup_names, accuracies, report_dict['accuracy'], "Accuracy", model_path)
-    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['weighted avg']['f1-score'], "F1-score", model_path)
+    plot_metric_subgroup_comparison(subgroup_names, accuracies, accs[1], "Accuracy", model_path)
+    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['1']['f1-score'], "F1-score", model_path)
 
     f1s = []
     precisions = []
@@ -219,7 +219,7 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BIASED", "COUNTERFACTUALS_race2"]
+    models = ["BIASED", "COUNTERFACTUALS_age_0"]
     accs = []
     f1s = []
     precisions = []

@@ -133,7 +133,7 @@ def test_classifier(model, test_loader, loss_fn):
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
     print('[Test loop]\tF1 score: ' + str(f1))
-    print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, y_score, attr_true, acc, f1
 
@@ -150,7 +150,7 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
         scheduler.step()
         _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn)
-        if acc < acc_pred:
+        if (acc_pred-acc) > 0.5:
             break
         torch.save(model.state_dict(), save_path)
         acc_pred = acc
