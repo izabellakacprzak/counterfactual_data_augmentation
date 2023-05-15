@@ -16,10 +16,11 @@ from utils.params import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
-def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric, metric_name, run_name):
+def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names):
+    colors 
     num_subgroups = len(subgroup_names)
     _ = plt.figure(metric_name)
-    width = 0.4
+    width = 0.8
 
     _, ax = plt.subplots()
     
@@ -27,9 +28,10 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
     print(subgroup_names)
     print(subgroup_metrics)
 
-    # avg_metric = sum(subgroup_metrics) / len(subgroup_metrics)
-    values = [m-avg_metric for m in subgroup_metrics]
-    _ = ax.bar(np.arange(num_subgroups), values, width, color='blue')
+    ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green'])
+    for idx, run in enumerate(run_names):
+        values = [m-averages[idx] for m in subgroup_metrics[idx]]
+        _ = ax.bar(np.arange(num_subgroups), values, width/(len(values)), label=run)
 
     ax.set_xlabel("Subgroups")
     ax.set_ylabel(metric_name)
@@ -39,7 +41,8 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, avg_metric
 
     # Create a horizontal line at the origin
     ax.axhline(y=0, color='black')
-    save_dir = 'plots/metrics_comp/{}'.format(run_name)
+    ax.legend()
+    save_dir = 'plots/metrics_comp'
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     plt.savefig(save_dir+"/subgroups_"+ metric_name +".png")
@@ -163,11 +166,6 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
     print("AUC score")
     print(roc_auc)
 
-    ## Print performance metrics per attribute (eg. sex, digit etc) ##
-    subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
-    plot_metric_subgroup_comparison(subgroup_names, accuracies, accs[1], "Accuracy", model_path)
-    plot_metric_subgroup_comparison(subgroup_names, f1s, report_dict['1']['f1-score'], "F1-score", model_path)
-
     f1s = []
     precisions = []
     recalls = []
@@ -177,7 +175,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         precisions.append(report_dict[label]['precision'])
         recalls.append(report_dict[label]['recall'])
 
-    return accs, f1s, precisions, recalls
+    return accs, f1s, precisions, recalls, metrics_true, y_true, y_pred
 
 def test_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
@@ -197,12 +195,12 @@ def test_perturbed_mnist():
         num_classes = 10
         attributes = ['thickness', 'intensity', 'bias_aligned']
         loss_fn = torch.nn.CrossEntropyLoss()
-        acc, f1, precision, recall = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+        acc, f1, precision, recall, _, _, _ = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
         print("Accuracies")
         print(acc)
         print("F1-scores")
-        print(fs)
+        print(f1)
         print("Precisoins")
         print(precision)
         print("Recalls")
@@ -224,6 +222,9 @@ def test_chestxray():
     f1s = []
     precisions = []
     recalls = []
+
+    attr_accs = []
+    attr_f1s = []
     
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
@@ -236,17 +237,26 @@ def test_chestxray():
         num_classes = 2
         attributes = ['sex', 'age', 'race']
         loss_fn = torch.nn.CrossEntropyLoss()
-        acc, f1, precision, recall = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
-
+        acc, f1, precision, recall, metrics_true, y_true, y_pred = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+    
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
 
+        ## Print performance metrics per attribute (eg. sex, digit etc) ##
+        subgroup_names, accuracies, f1s = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        attr_accs.append(accuracies)
+        attr_f1s.append(f1s)
+
+
     plot_metrics_comparison(models, accs, 'CHESTXRAYaccuracy')
     plot_metrics_comparison(models, f1s, 'CHESTXRAYf1-score')
     plot_metrics_comparison(models, precisions, 'CHESTXRAYprecision')
     plot_metrics_comparison(models, recalls, 'CHESTXRAYrecall')
+
+    plot_metric_subgroup_comparison(subgroup_names, attr_accs, accs, "Accuracy", models)
+    plot_metric_subgroup_comparison(subgroup_names, attr_f1s, f1s, "F1-score", models)
 
 # test_perturbed_mnist()
 test_chestxray()
