@@ -152,32 +152,33 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     y_pred, y_true, y_score, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
 
+    return metrics_true, y_true, y_pred, y_score
+
+def get_label_metrics(y_true, y_pred, y_score, num_classes):
     ## Get classification report and per-class performance ##
     report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
     print(report_dict)
 
-    # Get accuracy separetely #
-    matrix = metrics.confusion_matrix(y_true, y_pred)
-    accs = matrix.diagonal()/matrix.sum(axis=1)
-    print(accs)
     y_score = [p[1] for p in y_score]
     roc_auc = roc_auc_score(y_true, y_score)
     print("AUC score")
     print(roc_auc)
 
-    f1s = []
-    precisions = []
-    recalls = []
-    for label in range(out_channels):
-        label = str(label)
-        f1s.append(report_dict[label]['f1-score'])
-        precisions.append(report_dict[label]['precision'])
-        recalls.append(report_dict[label]['recall'])
+    matrix = metrics.confusion_matrix(y_true, y_pred)
+    accs = matrix.diagonal()/matrix.sum(axis=1)
+    f1s = [report_dict[label]['f1-score'] for label in range(num_classes)]
+    precisions = [report_dict[label]['precision'] for label in range(num_classes)]
+    recalls = [report_dict[label]['recall'] for label in range(num_classes)]
 
-    return accs, f1s, precisions, recalls, metrics_true, y_true, y_pred
+    return accs, f1s, precisions, recalls
 
 def test_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+    in_channels = 1
+    num_classes = 10
+    attributes = ['thickness', 'intensity', 'bias_aligned']
+    loss_fn = torch.nn.CrossEntropyLoss()
+    
     accs = []
     f1s = []
     precisions = []
@@ -190,21 +191,9 @@ def test_perturbed_mnist():
         print("[Test trained]\tTesting model: " + model)
 
         mnist_model_path = model + "_PERTURBED_MNIST"
-        in_channels = 1
-        num_classes = 10
-        attributes = ['thickness', 'intensity', 'bias_aligned']
-        loss_fn = torch.nn.CrossEntropyLoss()
-        acc, f1, precision, recall, _, _, _ = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+        _, y_true, y_pred, y_score = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
-        print("Accuracies")
-        print(acc)
-        print("F1-scores")
-        print(f1)
-        print("Precisoins")
-        print(precision)
-        print("Recalls")
-        print(recall)
-
+        acc, f1, precision, recall = get_label_metrics(y_true, y_pred, y_score, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
@@ -217,11 +206,15 @@ def test_perturbed_mnist():
 
 def test_chestxray():
     models = ["BIASED", "COUNTERFACTUALS_age_0"]
+    in_channels = 1
+    num_classes = 2
+    attributes = ['sex', 'age', 'race']
+    loss_fn = torch.nn.CrossEntropyLoss()
+    
     accs = []
     f1s = []
     precisions = []
     recalls = []
-
     attr_accs = []
     attr_f1s = []
     
@@ -232,12 +225,9 @@ def test_chestxray():
         print("[Test trained]\tTesting model: " + model)
 
         chestxray_model_path = model + "_CHESTXRAY"
-        in_channels = 1
-        num_classes = 2
-        attributes = ['sex', 'age', 'race']
-        loss_fn = torch.nn.CrossEntropyLoss()
-        acc, f1, precision, recall, metrics_true, y_true, y_pred = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
-    
+        metrics_true, y_true, y_pred, y_score = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
+
+        acc, f1, precision, recall = get_label_metrics(y_true, y_pred, y_score, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
