@@ -96,7 +96,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
     if method == AugmentationMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
             from dscmchest.generate_counterfactuals import generate_cfs
-            cf_data, cf_metrics = generate_cfs(train_data, amount=20000, do_a=0)
+            cf_data, cf_metrics = generate_cfs(train_data, amount=100000, do_f=0)
 
             # Save cf files
             np.save(CF_CHEST_DATA, np.array(cf_data))
