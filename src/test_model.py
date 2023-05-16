@@ -29,7 +29,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
 
     ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green'])
     for idx, run in enumerate(run_names):
-        values = [m-averages[idx][1] for m in subgroup_metrics[idx]]
+        values = [m-averages[idx] for m in subgroup_metrics[idx]]
         _ = ax.bar(np.arange(num_subgroups)+(width/len(run_names)*idx), values, width/(len(run_names)), label=run)
 
     ax.set_xlabel("Subgroups")
@@ -112,12 +112,12 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         for idx, t in enumerate(y_true):
             p = y_pred[idx]
             if p == t:
-                if t == 1:
+                if t == 0:
                     tp_unique[attr_values[idx]] = tp_unique[attr_values[idx]] + 1
                 else:
                     tn_unique[attr_values[idx]] = tn_unique[attr_values[idx]] + 1
             else:
-                if t == 1:
+                if t == 0:
                     fn_unique[attr_values[idx]] = fn_unique[attr_values[idx]] + 1
                 else:
                     fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
@@ -170,7 +170,7 @@ def get_label_metrics(y_true, y_pred, y_score, num_classes):
     precisions = [report_dict[str(label)]['precision'] for label in range(num_classes)]
     recalls = [report_dict[str(label)]['recall'] for label in range(num_classes)]
 
-    return accs, f1s, precisions, recalls, report_dict['accuracy'], report_dict['weighted avg']['f1-score']
+    return accs, f1s, precisions, recalls, report_dict['accuracy'], report_dict['macro avg']['f1-score']
 
 def test_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
@@ -205,7 +205,7 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BIASED", "COUNTERFACTUALS_age_0"]
+    models = ["BIASED", "COUNTERFACTUALS_age_0", "COUNTERFACTUALS_no_finding"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
