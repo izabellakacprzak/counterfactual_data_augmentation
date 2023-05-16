@@ -16,7 +16,21 @@ from utils.params import *
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 
-def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names): 
+def get_global_change_in_performance(base_means, new_means, run_name):
+    s_diff = 0
+    s_base = 0
+    for idx in range(len(base_means)):
+        s_base += base_means[idx]
+        s += new_means[idx] - base_means[idx]
+
+    global_change = s_diff / s_base
+    print("Global change in performance for {} is {}".format(run_name, global_change))
+
+def get_local_change_in_performance(base_worst, new_worst, run_name):
+    local_change = (new_worst - base_worst) / base_worst
+    print("Local change in performance for {} is {}".format(run_name, local_change))
+
+def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names):
     num_subgroups = len(subgroup_names)
     _ = plt.figure(metric_name)
     width = 0.8
@@ -250,6 +264,11 @@ def test_chestxray():
 
     plot_metric_subgroup_comparison(subgroup_names, attr_accs, overall_accs, "Accuracy", models)
     plot_metric_subgroup_comparison(subgroup_names, attr_f1s, overall_f1s, "F1-score", models)
+
+    worst_base = min(attr_accs[0])
+    for idx in range(len(models))[1:]:
+        get_global_change_in_performance(attr_accs[0], attr_accs[idx], models[idx])
+        get_local_change_in_performance(worst_base, min(attr_accs[idx]), models[idx])
 
 # test_perturbed_mnist()
 test_chestxray()
