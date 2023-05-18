@@ -30,6 +30,31 @@ def get_local_change_in_performance(base_worst, new_worst, run_name):
     local_change = (new_worst - base_worst) / base_worst
     print("Local change in performance for {} is {}".format(run_name, local_change))
 
+def plot_metric_subgroup(subgroup_names, subgroup_metrics, metric_name, run_names):
+    num_subgroups = len(subgroup_names)
+    _ = plt.figure(metric_name)
+    width = 0.8
+
+    _, ax = plt.subplots()
+
+    ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green'])
+    for idx, run in enumerate(run_names):
+        values = [m for m in subgroup_metrics[idx]]
+        _ = ax.bar(np.arange(num_subgroups)+(width/len(run_names)*idx), values, width/(len(run_names)), label=run)
+
+    ax.set_xlabel("Subgroups")
+    ax.set_ylabel(metric_name)
+    plt.xticks(rotation=45, ha='right')
+    ax.set_xticks(np.arange(num_subgroups) + width)
+    ax.set_xticklabels(['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black'])
+
+    # Create a horizontal line at the origin
+    ax.legend()
+    save_dir = 'plots/metrics_comp'
+    if not os.path.isdir(save_dir):
+        os.makedirs(save_dir)
+    plt.savefig(save_dir+"/subgroups_"+ metric_name +".png")
+
 def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names):
     num_subgroups = len(subgroup_names)
     _ = plt.figure(metric_name)
@@ -58,7 +83,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
     save_dir = 'plots/metrics_comp'
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-    plt.savefig(save_dir+"/subgroups_"+ metric_name +".png")
+    plt.savefig(save_dir+"/subgroups_comparison_"+ metric_name +".png")
 
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
@@ -264,6 +289,7 @@ def test_chestxray():
 
     plot_metric_subgroup_comparison(subgroup_names, attr_accs, overall_accs, "Accuracy", models)
     plot_metric_subgroup_comparison(subgroup_names, attr_f1s, overall_f1s, "F1-score", models)
+    plot_metric_subgroup(subgroup_names, attr_accs, "Accuracy", models)
 
     worst_base = min(attr_accs[0])
     for idx in range(len(models))[1:]:
