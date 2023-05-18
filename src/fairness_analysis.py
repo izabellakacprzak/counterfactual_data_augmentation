@@ -32,26 +32,16 @@ def _get_cf_for_chestxray(img, metrics, label, do_a, do_f, do_r, do_s):
     cf, cf_metrics = generate_cf(obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
     return cf, cf_metrics
 
-# Generates a scatterplot of how similar predictions made by classifier 
-# on counterfactual data are to predictions on original data
-# all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, perturbs_per_sample=3, do_cfs=True):
-    X, Y = [], []
+def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
+    originals = []
+    perturbed = []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
+        originals += data.unsqueeze(1)
         data = data.to(device)
         labels = labels.to(device)
-        logits = model(data).cpu()
-        probs = torch.nn.functional.softmax(logits, dim=1).tolist()
-        original_probs = []
 
-        # get probabilities for original data
-        for _, prob in enumerate(probs):
-            original_probs.append(prob[fairness_label])
         # get probabilities for counterfactual data with interventions on specific attribute
         for _ in range(perturbs_per_sample):
-            X = X + original_probs
-
-            perturbed = []
             for i in range(len(data)):
                 if do_cfs:
                     if "MNIST" in run_name:
@@ -65,35 +55,46 @@ def classifier_fairness_analysis(model, test_loader, run_name, fairness_label, p
                     img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
                     perturbed.append(torch.tensor(img).to(device))
                     
-            perturbed = torch.stack(perturbed)
-            if not do_cfs:
-                perturbed = perturbed.unsqueeze(1)
+    perturbed = torch.stack(perturbed)
+    if not do_cfs:
+        perturbed = perturbed.unsqueeze(1)
 
-            logits = model(perturbed).cpu()
-            probs = torch.nn.functional.softmax(logits, dim=1).tolist()
-            perturbed_probs = []
-            for _, prob in enumerate(probs):
-                perturbed_probs.append(prob[fairness_label])
-            Y = Y + perturbed_probs
+    return originals, perturbed
+
+# Generates a scatterplot of how similar predictions made by classifier 
+# on counterfactual data are to predictions on original data
+# all points should be clustered along the y=x line - meaning high classifier fairness
+def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness_label):
+    original_probs = []
+    perturbed_probs = []
+    for idx in range(len(originals)):
+        original = originals[idx]
+        perturbed = perturbed[idx]
+
+        original = original.to(device)
+        logits = model(original).cpu()
+        prob = torch.nn.functional.softmax(logits, dim=1).tolist()
+        original_probs.append(prob[fairness_label])
+        
+        logits = model(perturbed).cpu()
+        prob = torch.nn.functional.softmax(logits, dim=1).tolist()
+        perturbed_probs.append(prob[fairness_label])
 
     os.remove("originals.txt")    
     os.remove('cfs.txt')
     with open('originals.txt', 'x') as fp:
-        for item in X:
+        for item in original_probs:
             # write each item on a new line
             fp.write("%s\n" % item)
     
     with open('cfs.txt', 'x') as fp:
-        for item in Y:
+        for item in perturbed_probs:
             # write each item on a new line
             fp.write("%s\n" % item)
     print('Done')
-
-    X = np.array(X)
-    Y = np.array(Y)
     
     fig = plt.figure(run_name)
-    plt.scatter(X,Y)
+    plt.scatter(np.array(original_probs), perturbed_probs)
     plt.savefig("plots/fairness_age_0-19.png")
 
 def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label, do_cfs=True):
@@ -106,7 +107,8 @@ def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairn
     model.eval()
 
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    classifier_fairness_analysis(model, test_loader, model_path, fairness_label, do_cfs=do_cfs)
+    originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_path)
+    classifier_fairness_analysis(model, model_path, originals, perturbed, fairness_label)
     
 def visualise_perturbed_mnist():
     #models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
