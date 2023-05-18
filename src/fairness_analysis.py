@@ -36,7 +36,6 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
     originals = []
     perturbed = []
     for _, (data, metrics, labels) in enumerate(tqdm(test_loader)):
-        originals += data.unsqueeze(1)
         data = data.to(device)
         labels = labels.to(device)
 
@@ -50,7 +49,9 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                         do_a, do_f, do_r, do_s = 0, None, None, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
-                        if len(cf_metrics) != 0: perturbed.append(torch.tensor(cf).to(device)) 
+                        if len(cf_metrics) != 0:
+                            perturbed.append(torch.tensor(cf).to(device))
+                            originals.append(data[i][0])
                 else:
                     img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
                     perturbed.append(torch.tensor(img).to(device))
