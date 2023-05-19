@@ -56,6 +56,9 @@ class ChestXRay(datasets.VisionDataset):
         'x': [],
         'race': [],
     }
+
+    self.group_counts = {}
+    
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
         img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
 
@@ -68,9 +71,17 @@ class ChestXRay(datasets.VisionDataset):
         
         self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['finding'].append(finding)
-        self.samples['age'].append(self.data.loc[idx, 'age'])
-        self.samples['race'].append(self.data.loc[idx, 'race_label'])
-        self.samples['sex'].append(self.data.loc[idx, 'sex_label'])
+        age = self.data.loc[idx, 'age']
+        self.samples['age'].append(age)
+        race = self.data.loc[idx, 'race_label']
+        self.samples['race'].append(race)
+        sex = self.data.loc[idx, 'sex_label']
+        self.samples['sex'].append(sex)
+
+
+        g_names = ['finding'+finding, 'age'+age, 'race'+race, 'sex'+sex]
+        for g_name in g_names:
+            self.group_counts[g_name] = (0 if g_name in self.group_counts else self.group_counts[g_name]) + 1
 
     if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
       self._debias(method)
