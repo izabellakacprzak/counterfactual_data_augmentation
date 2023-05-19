@@ -88,8 +88,11 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do
             logits = model(data)
             loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
         else:
-            logits = model(data)    
-            loss = loss_fn(logits, target)
+            logits = model(data)  
+            if DO_GROUP_DRO:
+                loss = loss_fn.loss(logits, target, metrics['group_idx'])  
+            else:
+                loss = loss_fn(logits, target)
             if do_cf_regularisation:
                 loss += model.regularisation(data, metrics, target, logits)
 

@@ -158,16 +158,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
 
     age = age.astype(int)
     for idx, a in enumerate(age):
-        if 18<=a<=25:
-            age[idx] = 0
-        elif 26<=a<=40:
-            age[idx] = 1
-        elif 41<=a<=65:
-            age[idx] = 2
-        elif 66<=a<=80:
-            age[idx] = 3
-        else:
-            age[idx] = 4
+        age[idx] = (a/20) % 5
     df['age'] = age
 
     N = 10000

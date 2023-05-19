@@ -22,7 +22,7 @@ class DROLoss:
 
         self.reset_stats()
 
-    def loss(self, yhat, y, group_idx=None, is_training=False):
+    def loss(self, yhat, y, group_idx=None):
         # compute per-sample and per-group losses
         per_sample_losses = self.criterion(yhat, y)
         group_loss, group_count = self.compute_group_avg(per_sample_losses, group_idx)
@@ -31,7 +31,7 @@ class DROLoss:
         actual_loss, _ = self.compute_robust_loss(group_loss, group_count)
         return actual_loss
 
-    def compute_robust_loss(self, group_loss, group_count):
+    def compute_robust_loss(self, group_loss):
         adjusted_loss = group_loss
         if torch.all(self.adj>0):
             adjusted_loss += self.adj/torch.sqrt(self.group_counts)

@@ -58,7 +58,6 @@ class ChestXRay(datasets.VisionDataset):
     }
 
     self.group_counts = {}
-    
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
         img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
 
@@ -77,11 +76,10 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['race'].append(race)
         sex = self.data.loc[idx, 'sex_label']
         self.samples['sex'].append(sex)
-
-
-        g_names = ['finding'+finding, 'age'+age, 'race'+race, 'sex'+sex]
-        for g_name in g_names:
-            self.group_counts[g_name] = (0 if g_name in self.group_counts else self.group_counts[g_name]) + 1
+ 
+        # groups for group DRO loss
+        group_idx = (age/20%5)
+        self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
       self._debias(method)
@@ -99,6 +97,7 @@ class ChestXRay(datasets.VisionDataset):
 
     # print(f'sample before: {sample}')
 
+    group_idx = sample['age']/20 % 5
     for k, v in sample.items():
         sample[k] = torch.tensor(v)
 
@@ -106,7 +105,7 @@ class ChestXRay(datasets.VisionDataset):
     if self.transform:
         sample['x'] = self.transform(sample['x'])
 
-    metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race']}
+    metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race'], 'group_idx':group_idx}
     return sample['x'], metrics, sample['finding']
 
   def __len__(self):
