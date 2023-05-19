@@ -14,7 +14,7 @@ import seaborn as sns
 from utils.params import *
 from morphomnist import measure
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)
@@ -170,7 +170,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
             age[idx] = 4
     df['age'] = age
 
-    N = 100000
+    N = 10000
     rndperm = np.random.permutation(df.shape[0])
     df_subset = df.loc[rndperm[:N],:].copy()
     data_subset = df_subset[feat_cols].values
@@ -197,8 +197,8 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
         legend="full",
         alpha=0.3
     )
-    fig = plot.get_figure()
-    fig.savefig(file_name + "_labels.png") 
+    #fig = plot.get_figure()
+    plot.savefig(file_name + "_labels.png") 
 
     plt.figure(figsize=(16,10))
     plot = sns.jointplot(
@@ -209,8 +209,8 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
         legend="full",
         alpha=0.3
     )
-    fig = plot.get_figure()
-    fig.savefig(file_name + "_race.png") 
+    #fig = plot.get_figure()
+    plot.savefig(file_name + "_race.png") 
 
     plt.figure(figsize=(16,10))
     plot = sns.jointplot(
@@ -221,8 +221,8 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
         legend="full",
         alpha=0.3
     )
-    fig = plot.get_figure()
-    fig.savefig(file_name + "_sex.png") 
+    #fig = plot.get_figure()
+    plot.savefig(file_name + "_sex.png") 
 
     plt.figure(figsize=(16,10))
     plot = sns.jointplot(
@@ -233,5 +233,5 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
         legend="full",
         alpha=0.3
     )
-    fig = plot.get_figure()
-    fig.savefig(file_name + "_age.png") 
+    #fig = plot.get_figure()
+    plot.savefig(file_name + "_age.png") 

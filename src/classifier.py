@@ -11,7 +11,7 @@ from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def mnist_regularisation(model, x, metrics, labels, logits):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x
@@ -29,13 +29,10 @@ def mnist_regularisation(model, x, metrics, labels, logits):
 def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
     cfs = []
-    for i in range(len(x)):
-        obs = {'x':x[i][0], 'sex':metrics['sex'][i], 'age':metrics['age'][i], 'race':metrics['race'][i], 'finding':labels[i]}
-        do_a, do_f, do_r, do_s = None, None, 2, None
-        x_cf, _ = generate_cf(obs, do_a, do_f, do_r, do_s)
-        cfs.append(torch.from_numpy(x_cf).float().to(device))
-    
-    cfs = torch.stack(cfs)
+    obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
+    do_a, do_f, do_r, do_s = 0, None, None, None
+    x_cf = generate_cf(obs, do_a, do_f, do_r, do_s)
+    cfs = torch.from_numpy(x_cf).float().unsqueeze(1).to(device)
     logits_cf = model(cfs)
     return LAMBDA * MSE(logits, logits_cf)
 
