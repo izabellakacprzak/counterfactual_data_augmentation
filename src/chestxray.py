@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet, train_and_evaluate
+from dro_loss import DROLoss
 
 from utils.params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric, get_attribute_counts_chestxray
@@ -41,7 +42,14 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/chestxray/classifier_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
+
+    loss_fn = torch.nn.CrossEntropyLoss()
+    if DO_GROUP_DRO:
+        n_groups = len(train_dataset.group_counts)
+        group_counts = list(train_dataset.group_counts.values())
+        loss_fn = DROLoss(loss_fn, n_groups, group_counts)
+
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)

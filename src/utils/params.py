@@ -7,6 +7,8 @@ BATCH_SIZE = 32
 MSE = torch.nn.MSELoss()
 TRAIN_PERTURBED_FILE = "data/train_mnist_perturbed.pt"
 
+DO_GROUP_DRO = False
+
 COUNTERFACTUALS_DATA = "../../DSCMv2/src/data/generated_counterfactuals.pt"
 COUNTERFACTUALS_METRICS = "../../DSCMv2/src/data/generated_counterfactuals_metrics.csv"
 CF_CHEST_DATA = "data/chestxray/generated_cfs_data_age0.npy"
