@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torchvision
 import torch.optim.lr_scheduler as lr_scheduler
 
-from utils.utils import mixup_data
+from utils.utils import mixup_data, DebiasingMethod
 from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
@@ -77,26 +77,26 @@ class ConvNet(torch.nn.Module):
     def regularisation(self, data, metrics, target, logits):
         return mnist_regularisation(self, data, metrics, target, logits)
 
-def _get_loss(logits, target, loss_fn, group_idxs=None):
-    if DO_GROUP_DRO:
+def _get_loss(logits, target, loss_fn, do_dro=False, group_idxs=None):
+    if do_dro:
         return loss_fn.loss(logits, target, group_idxs)
     else:
         return loss_fn(logits, target)
 
-def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do_cf_regularisation=False):
+def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro=False, debiasing_method=DebiasingMethod.NONE):
     model.train()
     for batch_idx, (data, metrics, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimiser.zero_grad()
 
-        if do_mixup:
+        if debiasing_method==DebiasingMethod.MIXUP:
             data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device("cuda:0"))
             logits = model(data)
             loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
         else:
             logits = model(data)  
-            loss = _get_loss(logits, target, loss_fn, metrics['group_idx'].to(device))
-            if do_cf_regularisation:
+            loss = _get_loss(logits, target, loss_fn, metrics['group_idx'].to(device), do_dro)
+            if debiasing_method==DebiasingMethod.CF_REGULARISATION:
                 loss += model.regularisation(data, metrics, target, logits)
 
         loss.backward()
@@ -106,7 +106,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def test_classifier(model, test_loader, loss_fn):
+def test_classifier(model, test_loader, loss_fn, do_dro=False):
     model.eval()
     test_loss = 0
     correct = 0
@@ -121,7 +121,7 @@ def test_classifier(model, test_loader, loss_fn):
             output = model(data)
             probs = F.softmax(output, dim=1).tolist()
             y_score += probs
-            test_loss = _get_loss(output, target, loss_fn, metrics['group_idx'].to(device))
+            test_loss = _get_loss(output, target, loss_fn, metrics['group_idx'].to(device), do_dro)
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
 
@@ -140,7 +140,7 @@ def test_classifier(model, test_loader, loss_fn):
         test_loss, correct, len(test_loader.dataset), acc))
     return y_pred, y_true, y_score, attr_true, acc, f1
 
-def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_cf_regularisation=False, do_mixup=False):
+def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_dro=False, debiasing_method=DebiasingMethod.NONE):
     optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = lr_scheduler.LinearLR(optimiser, start_factor=1.0, end_factor=0.5, total_iters=EPOCHS)
     accs = []
@@ -150,7 +150,7 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
     accs.append(acc_pred)
     f1s.append(f1)
     for epoch in range(1, EPOCHS):
-        run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup, do_cf_regularisation)
+        run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro, debiasing_method)
         scheduler.step()
         _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn)
         if (acc_pred-acc) > 0.5:
@@ -158,6 +158,6 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
         torch.save(model.state_dict(), save_path)
         acc_pred = acc
 
-    y_pred, y_true, _, _, _, _ = test_classifier(model, test_loader, loss_fn)
+    y_pred, y_true, _, _, _, _ = test_classifier(model, test_loader, loss_fn, do_dro)
 
     return accs, f1s, y_pred, y_true

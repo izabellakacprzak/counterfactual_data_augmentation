@@ -14,7 +14,7 @@ from .params import *
 from enum import Enum
 from .perturbations import perturbations, perturb_image
  
-class AugmentationMethod(Enum):
+class DebiasingMethod(Enum):
     NONE = 1
     OVERSAMPLING = 2
     REWEIGHING = 3
@@ -62,9 +62,9 @@ def _add_noise(image, noise_type="gauss"):
         return out
    
 def apply_debiasing_method(method, img):
-    if method == AugmentationMethod.OVERSAMPLING:
+    if method == DebiasingMethod.OVERSAMPLING:
         return img
-    elif method == AugmentationMethod.AUGMENTATIONS:
+    elif method == DebiasingMethod.AUGMENTATIONS:
         augmentation = random.choice(list(Augmentation))
         if augmentation == Augmentation.ROTATION:
             angle = random.randrange(-30, 30)
@@ -84,7 +84,7 @@ def apply_debiasing_method(method, img):
         img = perturb_image(img, perturbation)
         return img
 
-def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
+def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     samples = {
             'age': [],
             'sex': [],
@@ -93,7 +93,7 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
             'race': [],
         }
     
-    if method == AugmentationMethod.COUNTERFACTUALS:
+    if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
             from dscmchest.generate_counterfactuals import generate_cfs
             cf_data, cf_metrics = generate_cfs(train_data, amount=20000, do_a=0)
@@ -136,12 +136,12 @@ def debias_chestxray(train_data, method=AugmentationMethod.OVERSAMPLING):
 
     return samples
 
-def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLING):
-    if (method == AugmentationMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and
+def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
+    if (method == DebiasingMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and
         os.path.exists("data/mnist_debiased_perturbed_metrics.csv")):
         return torch.load("data/mnist_debiased_perturbed.pt"), pd.read_csv("data/mnist_debiased_perturbed_metrics.csv", index_col='index')
     
-    if method == AugmentationMethod.COUNTERFACTUALS:
+    if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(COUNTERFACTUALS_DATA) or not os.path.exists(COUNTERFACTUALS_METRICS):
             sys.exit("Error: file with counterfactuals does not exist!")
 
@@ -159,7 +159,7 @@ def debias_mnist(train_data, train_metrics, method=AugmentationMethod.OVERSAMPLI
                 new_m['bias_aligned'] = False
                 new_metrics.append(new_m)
 
-    if method == AugmentationMethod.PERTURBATIONS:
+    if method == DebiasingMethod.PERTURBATIONS:
         torch.save(train_data + new_data, "data/mnist_debiased_perturbed.pt")
 
     return train_data + new_data, train_metrics + new_metrics

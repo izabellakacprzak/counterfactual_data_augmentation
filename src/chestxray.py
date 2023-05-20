@@ -8,7 +8,7 @@ from dro_loss import DROLoss
 
 from utils.params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric, get_attribute_counts_chestxray
-from utils.utils import AugmentationMethod
+from utils.utils import DebiasingMethod
 
 pred_arr = []
 true_arr = []
@@ -21,7 +21,7 @@ out_channels = 2
 
 transforms_list = transforms.Compose([transforms.Resize((192,192)),])
 
-def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
+def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=False):
     runs_arr.append(run_name)
     print("[ChestXRay train]\t" + run_name)
     train_dataset = ChestXRay(mode="train", transform=transforms_list, method=debiasing_method)
@@ -36,14 +36,11 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     valid_loader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    #model = ConvNet(in_channels=in_channels, out_channels=out_channels)
     model = DenseNet(in_channels=in_channels, out_channels=out_channels)
 
-    do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
-    do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/chestxray/classifier_" + run_name + ".pt"
 
-    if DO_GROUP_DRO:
+    if do_dro:
         loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
         n_groups = len(train_dataset.group_counts)
         group_counts = list(train_dataset.group_counts.values())
@@ -51,26 +48,22 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     else:
         loss_fn = torch.nn.CrossEntropyLoss()
 
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_cf_reg, do_mixup)
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_dro, debiasing_method)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)
     true_arr.append(y_true)
-
-    # torch.save(model.state_dict(), "../checkpoints/chestxray/classifier_" + run_name + ".pt")
-    #visualise_t_sne(test_loader, model, "plots/chestxray/"+run_name+"t_sne")
 
 ############################################################
 # Train and evaluate the ChestXRay dataset
 # biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-# plot_dataset_digits(train_dataset)
-#train_chestxray("BIASED_DRO_CHESTXRAY")
-train_chestxray("OVERSAMPLING_age_0_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
-train_chestxray("AUGMENTATIONS_age_0_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
-train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
-train_chestxray("CFREGULARISATION_age_0_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
+train_chestxray("GROUP_DRO_age_CHESTXRAY", do_dro=True)
+train_chestxray("OVERSAMPLING_age_0_CHESTXRAY", DebiasingMethod.OVERSAMPLING)
+train_chestxray("AUGMENTATIONS_age_0_CHESTXRAY", DebiasingMethod.AUGMENTATIONS)
+train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", DebiasingMethod.COUNTERFACTUALS)
+train_chestxray("CFREGULARISATION_age_0_CHESTXRAY", DebiasingMethod.CF_REGULARISATION)
 
 ############################################################
 
@@ -78,5 +71,4 @@ for idx in range(len(runs_arr)):
     print("[ChestXRay train]\t" + runs_arr[idx])
     save_plot_for_metric("Accuracy", accs_arr[idx], runs_arr[idx])
     save_plot_for_metric("F1", f1s_arr[idx], runs_arr[idx])
-    # plt.show()
     pretty_print_evaluation(pred_arr[idx], true_arr[idx], range(out_channels))

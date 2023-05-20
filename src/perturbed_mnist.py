@@ -7,7 +7,7 @@ from classifier import ConvNet, train_and_evaluate
 
 from utils.params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric
-from utils.utils import AugmentationMethod
+from utils.utils import DebiasingMethod
 
 pred_arr = []
 true_arr = []
@@ -20,7 +20,7 @@ out_channels = 10
 
 transforms_list = transforms.Compose([transforms.ToTensor()])
 
-def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=AugmentationMethod.NONE):
+def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=DebiasingMethod.NONE):
     runs_arr.append(run_name)
     print("[Perturbed MNIST train]\t" + run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
@@ -34,10 +34,8 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
 
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
 
-    do_cf_reg = debiasing_method==AugmentationMethod.CF_REGULARISATION
-    do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/mnist/classifier_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, do_cf_reg, do_mixup)
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, debiasing_method)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)
@@ -59,7 +57,7 @@ bias_conflicting_perc = 0.01
 # train_perturbed_mnist("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
 # train_perturbed_mnist("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
 # train_perturbed_mnist("CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
-train_perturbed_mnist("MIXUP_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.MIXUP)
+train_perturbed_mnist("MIXUP_PERTURBED_MNIST", bias_conflicting_perc, DebiasingMethod.MIXUP)
 
 ############################################################
 

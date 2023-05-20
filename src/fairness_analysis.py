@@ -10,7 +10,7 @@ import os
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet
-from utils.utils import apply_debiasing_method, AugmentationMethod
+from utils.utils import apply_debiasing_method, DebiasingMethod
 from utils.params import *
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
@@ -53,7 +53,7 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                             perturbed.append(torch.tensor(cf).to(device))
                             originals.append(data[i][0])
                 else:
-                    img = apply_debiasing_method(AugmentationMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
+                    img = apply_debiasing_method(DebiasingMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
                     perturbed.append(torch.tensor(img).to(device))
                     
     perturbed = torch.stack(perturbed)

@@ -25,7 +25,7 @@ def norm(batch):
     return batch
 
 class ChestXRay(datasets.VisionDataset):
-  def __init__(self, mode="train", transform=None, target_transform=None, method=AugmentationMethod.NONE):
+  def __init__(self, mode="train", transform=None, target_transform=None, method=DebiasingMethod.NONE):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
@@ -81,7 +81,7 @@ class ChestXRay(datasets.VisionDataset):
         group_idx = (age//20) % 5
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
-    if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
+    if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
       self._debias(method)
 
   def _debias(self, method):
