@@ -20,7 +20,7 @@ class DROLoss:
         self.exp_avg_loss = torch.zeros(self.n_groups).cuda()
         self.exp_avg_initialized = torch.zeros(self.n_groups).byte().cuda()
 
-        self.reset_stats()
+        #self.reset_stats()
 
     def loss(self, yhat, y, group_idx=None):
         # compute per-sample and per-group losses
@@ -28,7 +28,7 @@ class DROLoss:
         group_loss, group_count = self.compute_group_avg(per_sample_losses, group_idx)
 
         # compute overall loss
-        actual_loss, _ = self.compute_robust_loss(group_loss, group_count)
+        actual_loss, _ = self.compute_robust_loss(group_loss)
         return actual_loss
 
     def compute_robust_loss(self, group_loss):
@@ -47,6 +47,6 @@ class DROLoss:
         # compute observed counts and mean loss for each group
         group_map = (group_idx == torch.arange(self.n_groups).unsqueeze(1).long().cuda()).float()
         group_count = group_map.sum(1)
-        group_denom = group_count + (group_count==0).float() # avoid nans
+        group_denom = group_count + (group_count==0).float() # avoid nans 
         group_loss = (group_map @ losses.view(-1))/group_denom
         return group_loss, group_count

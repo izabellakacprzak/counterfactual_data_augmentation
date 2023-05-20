@@ -11,7 +11,7 @@ from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def mnist_regularisation(model, x, metrics, labels, logits):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x
@@ -77,6 +77,12 @@ class ConvNet(torch.nn.Module):
     def regularisation(self, data, metrics, target, logits):
         return mnist_regularisation(self, data, metrics, target, logits)
 
+def _get_loss(logits, target, loss_fn, group_idxs=None):
+    if DO_GROUP_DRO:
+        return loss_fn.loss(logits, target, group_idxs)
+    else:
+        return loss_fn(logits, target)
+
 def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do_cf_regularisation=False):
     model.train()
     for batch_idx, (data, metrics, target) in enumerate(train_loader):
@@ -89,10 +95,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_mixup=False, do
             loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
         else:
             logits = model(data)  
-            if DO_GROUP_DRO:
-                loss = loss_fn.loss(logits, target, metrics['group_idx'])  
-            else:
-                loss = loss_fn(logits, target)
+            loss = _get_loss(logits, target, loss_fn, metrics['group_idx'].to(device))
             if do_cf_regularisation:
                 loss += model.regularisation(data, metrics, target, logits)
 
@@ -118,7 +121,7 @@ def test_classifier(model, test_loader, loss_fn):
             output = model(data)
             probs = F.softmax(output, dim=1).tolist()
             y_score += probs
-            test_loss += loss_fn(output, target)
+            test_loss = _get_loss(output, target, loss_fn, metrics['group_idx'].to(device))
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
 

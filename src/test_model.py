@@ -21,7 +21,7 @@ def get_global_change_in_performance(base_means, new_means, run_name):
     s_base = 0
     for idx in range(len(base_means)):
         s_base += base_means[idx]
-        s += new_means[idx] - base_means[idx]
+        s_diff += new_means[idx] - base_means[idx]
 
     global_change = s_diff / s_base
     print("Global change in performance for {} is {}".format(run_name, global_change))
@@ -131,6 +131,8 @@ def _preprocess_age(metrics):
 def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     subgroup_names = []
     accuracies = []
+    recalls = []
+    precisions = []
     f1s = []
     for idx, attribute in enumerate(attributes):
         if attribute in ['thickness']:
@@ -170,12 +172,22 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div
             accuracies.append(acc)
 
+            # save precision values
+            div = tp_unique[av] + fp_unique[av]
+            pr = 0 if div==0 else tp_unique[av] / div
+            precisions.append(pr)
+
+            # save recall values
+            div = tp_unique[av] + fn_unique[av]
+            rc = 0 if div==0 else tp_unique[av] / div
+            recalls.append(rc)
+
             # save f1 score values
             div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
             f1 = 0 if div==0 else tp_unique[av]/div
             f1s.append(f1)
 
-    return subgroup_names, accuracies, f1s
+    return subgroup_names, accuracies, precisions, recalls, f1s
 
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
@@ -244,7 +256,8 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BIASED", "COUNTERFACTUALS_age_0", "COUNTERFACTUALS_no_finding"]
+    #models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0"]
+    models = ["BASELINE", "BIASED_DRO"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
@@ -255,6 +268,8 @@ def test_chestxray():
     precisions = []
     recalls = []
     attr_accs = []
+    attr_precs = []
+    attr_rcs = []
     attr_f1s = []
     overall_accs = []
     overall_f1s = []
@@ -277,8 +292,10 @@ def test_chestxray():
         overall_f1s.append(overall_f1)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
-        subgroup_names, attr_acc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        subgroup_names, attr_acc, attr_pr, attr_rc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
         attr_accs.append(attr_acc)
+        attr_precs.append(attr_pr)
+        attr_rcs.append(attr_rc)
         attr_f1s.append(attr_f1)
 
 
@@ -290,7 +307,10 @@ def test_chestxray():
     plot_metric_subgroup_comparison(subgroup_names, attr_accs, overall_accs, "Accuracy", models)
     plot_metric_subgroup_comparison(subgroup_names, attr_f1s, overall_f1s, "F1-score", models)
     plot_metric_subgroup(subgroup_names, attr_accs, "Accuracy", models)
-
+    plot_metric_subgroup(subgroup_names, attr_precs, "Precision", models)
+    plot_metric_subgroup(subgroup_names, attr_rcs, "Recall", models)
+    plot_metric_subgroup(subgroup_names, attr_f1s, "F1-score", models)
+    
     worst_base = min(attr_accs[0])
     for idx in range(len(models))[1:]:
         get_global_change_in_performance(attr_accs[0], attr_accs[idx], models[idx])

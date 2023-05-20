@@ -43,11 +43,13 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
     do_mixup = debiasing_method==AugmentationMethod.MIXUP
     save_path = "../checkpoints/chestxray/classifier_" + run_name + ".pt"
 
-    loss_fn = torch.nn.CrossEntropyLoss()
     if DO_GROUP_DRO:
+        loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
         n_groups = len(train_dataset.group_counts)
         group_counts = list(train_dataset.group_counts.values())
         loss_fn = DROLoss(loss_fn, n_groups, group_counts)
+    else:
+        loss_fn = torch.nn.CrossEntropyLoss()
 
     accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_cf_reg, do_mixup)
     accs_arr.append(accuracies)
@@ -64,11 +66,11 @@ def train_chestxray(run_name, debiasing_method=AugmentationMethod.NONE):
 # and balanced with counterfactual images
 
 # plot_dataset_digits(train_dataset)
-train_chestxray("BIASED_CHESTXRAY")
-# train_chestxray("OVERSAMPLING_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
-# train_chestxray("AUGMENTATIONS_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
+#train_chestxray("BIASED_DRO_CHESTXRAY")
+train_chestxray("OVERSAMPLING_age_0_CHESTXRAY", AugmentationMethod.OVERSAMPLING)
+train_chestxray("AUGMENTATIONS_age_0_CHESTXRAY", AugmentationMethod.AUGMENTATIONS)
 train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", AugmentationMethod.COUNTERFACTUALS)
-# train_chestxray("CFREGULARISATION_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
+train_chestxray("CFREGULARISATION_age_0_CHESTXRAY", AugmentationMethod.CF_REGULARISATION)
 
 ############################################################
 

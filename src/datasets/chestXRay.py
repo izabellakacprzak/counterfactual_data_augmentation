@@ -78,7 +78,7 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['sex'].append(sex)
  
         # groups for group DRO loss
-        group_idx = (age/20%5)
+        group_idx = (age//20) % 5
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     if not method in [AugmentationMethod.NONE, AugmentationMethod.CF_REGULARISATION, AugmentationMethod.MIXUP]:
@@ -97,7 +97,7 @@ class ChestXRay(datasets.VisionDataset):
 
     # print(f'sample before: {sample}')
 
-    group_idx = sample['age']/20 % 5
+    group_idx = torch.tensor((sample['age']//20) % 5)
     for k, v in sample.items():
         sample[k] = torch.tensor(v)
 
