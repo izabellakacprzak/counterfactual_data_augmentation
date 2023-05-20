@@ -7,11 +7,11 @@ from tqdm import tqdm
 import numpy as np
 import os
 
-from datasets.perturbedMNIST import PerturbedMNIST
-from datasets.chestXRay import ChestXRay
-from classifier import ConvNet, DenseNet
-from utils.utils import apply_debiasing_method, DebiasingMethod
-from utils.params import *
+from ..datasets.perturbedMNIST import PerturbedMNIST
+from ..datasets.chestXRay import ChestXRay
+from ..classifier import ConvNet, DenseNet
+from ..utils.utils import apply_debiasing_method, DebiasingMethod
+from ..utils.params import *
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
@@ -98,7 +98,7 @@ def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness
     plt.scatter(np.array(original_probs), perturbed_probs)
     plt.savefig("plots/fairness_age_0-19.png")
 
-def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairness_label, do_cfs=True):
+def fairness_analysis(model_path, originals, perturbed, in_channels, out_channels, fairness_label):
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
@@ -106,30 +106,36 @@ def fairness_analysis(model_path, test_dataset, in_channels, out_channels, fairn
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
     model.eval()
-
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_path)
     classifier_fairness_analysis(model, model_path, originals, perturbed, fairness_label)
     
 def visualise_perturbed_mnist():
     #models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
     models = ["AUGMENTATIONS"]
+    model_type = "_PERTURBED_MNIST"
     transforms_list = transforms.Compose([transforms.ToTensor()])
     test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=1.0)
 
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    do_cfs = False
+    originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_type)
+
     for model in models:
-        mnist_model_path = model + "_PERTURBED_MNIST"
-        fairness_analysis(mnist_model_path, test_dataset, 1, 10, 0, False)
+        mnist_model_path = model + model_type
+        fairness_analysis(mnist_model_path, originals, perturbed, 1, 10, 0)
 
 def visualise_chestxray():
     models = ["COUNTERFACTUALS_age_0"]
-
+    model_type = "_CHESTXRAY"
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    do_cfs = False
+    originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_type)
+
     for model in models:
-        chestxray_model_path = model + "_CHESTXRAY"
-        fairness_analysis(chestxray_model_path, test_dataset, 1, 2, 0)
+        chestxray_model_path = model + model_type
+        fairness_analysis(chestxray_model_path, originals, perturbed, 1, 2, 0)
 
 #visualise_perturbed_mnist()
 visualise_chestxray()

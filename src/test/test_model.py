@@ -8,13 +8,12 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
-from datasets.perturbedMNIST import PerturbedMNIST
-from datasets.chestXRay import ChestXRay
-from classifier import ConvNet, DenseNet, test_classifier
-from utils.params import *
+from ..datasets.perturbedMNIST import PerturbedMNIST
+from ..datasets.chestXRay import ChestXRay
+from ..classifier import ConvNet, DenseNet, test_classifier
+from ..utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
 
 def get_global_change_in_performance(base_means, new_means, run_name):
     s_diff = 0

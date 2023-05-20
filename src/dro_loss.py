@@ -1,5 +1,6 @@
 import torch
 
+# adapted from: https://github.com/kohpangwei/group_DRO.git
 class DROLoss:
     def __init__(self, criterion, n_groups, group_counts, adj=None, min_var_weight=0, step_size=0.01, normalize_loss=False):
         self.criterion = criterion

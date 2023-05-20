@@ -1,13 +1,12 @@
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from sklearn import metrics
 
-from datasets.perturbedMNIST import PerturbedMNIST
-from datasets.chestXRay import ChestXRay
-from utils.evaluate import visualise_t_sne
-from classifier import ConvNet, DenseNet, test_classifier
-from utils.params import *
+from ..datasets.perturbedMNIST import PerturbedMNIST
+from ..datasets.chestXRay import ChestXRay
+from ..utils.evaluate import visualise_t_sne
+from ..classifier import ConvNet, DenseNet, test_classifier
+from ..utils.params import *
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
