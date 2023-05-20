@@ -42,9 +42,9 @@ def add_perturbations(images, targets, digits, perturbations=perturbations):
 
 # bias: [0, 7, 8] mostly thin, [1, 3, 6, 9] mostly thick, [2, 4, 5] equally spread
 def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0.05):
-    train_file_name = "data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt"
+    train_file_name = "data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt"
     test_file_name = "data/test_perturbed.pt"
-    metrics_train_file_name = "data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv"
+    metrics_train_file_name = "data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv"
     metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
 
     if os.path.exists(train_file_name) and os.path.exists(test_file_name):

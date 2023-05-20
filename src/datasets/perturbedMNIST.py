@@ -17,8 +17,8 @@ class PerturbedMNIST(datasets.VisionDataset):
 
     prepare_perturbed_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
     if train:
-      self.data = torch.load("data/train_perturbed"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt")
-      self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics"+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
+      self.data = torch.load("data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt")
+      self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
       
       if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
         self.data, self.metrics = debias_mnist(train_data=self.data, train_metrics=self.metrics, method=method)

@@ -13,12 +13,12 @@ device = torch.device("cpu")
 def visualise_embeddings(model_path, test_dataset, in_channels, out_channels, img_dim):
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    visualise_t_sne(test_loader, model, img_dim, "plots/"+model_path+"t_sne")
+    visualise_t_sne(test_loader, model, img_dim, "plots/{}t_sne".format(model_path))
 
 def visualise_perturbed_mnist():
     models = ["UNBIASED", "BIASED", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]

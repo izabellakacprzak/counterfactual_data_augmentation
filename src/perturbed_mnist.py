@@ -41,9 +41,6 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
     pred_arr.append(y_pred)
     true_arr.append(y_true)
 
-    # torch.save(model.state_dict(), "../checkpoints/mnist/classifier_" + run_name + ".pt")
-    # visualise_t_sne(test_loader, model, "plots/mnist/"+run_name+"t_sne")
-
 ############################################################
 # Train and evaluate the MorphoMNIST dataset of perturbed MNIST images
 # unbiased, biased, balanced with oversampling, balanced with standard data augmentations methods

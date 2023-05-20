@@ -52,7 +52,7 @@ def plot_metric_subgroup(subgroup_names, subgroup_metrics, metric_name, run_name
     save_dir = 'plots/metrics_comp'
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-    plt.savefig(save_dir+"/subgroups_"+ metric_name +".png")
+    plt.savefig("{}/subgroups_{}.png".format(save_dir, metric_name))
 
 def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, metric_name, run_names):
     num_subgroups = len(subgroup_names)
@@ -82,7 +82,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
     save_dir = 'plots/metrics_comp'
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-    plt.savefig(save_dir+"/subgroups_comparison_"+ metric_name +".png")
+    plt.savefig("{}/subgroups_comparison_{}.png".format(save_dir, metric_name))
 
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
@@ -109,7 +109,7 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
     save_dir = 'plots/metrics_comp/'
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-    plt.savefig(save_dir+ metric_name +".png")
+    plt.savefig("{}{}.png".format(save_dir, metric_name))
 
 def _preprocess_age(metrics):
     processed_metrics = []
@@ -193,10 +193,10 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
     ## Test pretrained model ## 
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
         
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 

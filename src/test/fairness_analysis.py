@@ -101,10 +101,10 @@ def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness
 def fairness_analysis(model_path, originals, perturbed, in_channels, out_channels, fairness_label):
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_"+model_path+".pt", map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
     model.eval()
     classifier_fairness_analysis(model, model_path, originals, perturbed, fairness_label)
     
