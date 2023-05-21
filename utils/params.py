@@ -1,5 +1,7 @@
 import torch 
 
+GPU = "cuda:0"
+
 LEARNING_RATE = 0.00005
 EPOCHS = 12
 LAMBDA = 1.0
