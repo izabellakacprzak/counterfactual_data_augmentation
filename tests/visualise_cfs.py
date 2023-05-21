@@ -3,8 +3,8 @@ from torchvision import transforms
 import random
 import numpy as np
 
-from src.utils.params import *
-from src.datasets.chestXRay import ChestXRay
+from utils.params import *
+from datasets.chestXRay import ChestXRay
 from dscmchest.generate_counterfactuals import generate_cf
 
 

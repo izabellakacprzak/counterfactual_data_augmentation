@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score, roc_curve
 
-from src.datasets.perturbedMNIST import PerturbedMNIST
-from src.datasets.chestXRay import ChestXRay
-from src.classifier import ConvNet, DenseNet, test_classifier
-from src.utils.params import *
+from datasets.perturbedMNIST import PerturbedMNIST
+from datasets.chestXRay import ChestXRay
+from classifier import ConvNet, DenseNet, test_classifier
+from utils.params import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
