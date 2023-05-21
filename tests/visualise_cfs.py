@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 import random
 import numpy as np
-from utils.params import *
-from datasets.chestXRay import ChestXRay
+
+from src.utils.params import *
+from src.datasets.chestXRay import ChestXRay
 from dscmchest.generate_counterfactuals import generate_cf
 
 
