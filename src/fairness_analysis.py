@@ -7,11 +7,11 @@ from tqdm import tqdm
 import numpy as np
 import os
 
-from ..datasets.perturbedMNIST import PerturbedMNIST
-from ..datasets.chestXRay import ChestXRay
-from ..classifier import ConvNet, DenseNet
-from ..utils.utils import apply_debiasing_method, DebiasingMethod
-from ..utils.params import *
+from datasets.perturbedMNIST import PerturbedMNIST
+from datasets.chestXRay import ChestXRay
+from classifier import ConvNet, DenseNet
+from utils.utils import apply_debiasing_method, DebiasingMethod
+from utils.params import *
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 

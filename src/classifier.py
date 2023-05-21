@@ -11,7 +11,7 @@ from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def mnist_regularisation(model, x, metrics, labels, logits):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x
@@ -95,7 +95,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro=False, debi
             loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
         else:
             logits = model(data)  
-            loss = _get_loss(logits, target, loss_fn, metrics['group_idx'].to(device), do_dro)
+            loss = _get_loss(logits, target, loss_fn, do_dro, metrics['group_idx'].to(device))
             if debiasing_method==DebiasingMethod.CF_REGULARISATION:
                 loss += model.regularisation(data, metrics, target, logits)
 
@@ -121,7 +121,7 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
             output = model(data)
             probs = F.softmax(output, dim=1).tolist()
             y_score += probs
-            test_loss = _get_loss(output, target, loss_fn, metrics['group_idx'].to(device), do_dro)
+            test_loss = _get_loss(output, target, loss_fn, do_dro, metrics['group_idx'].to(device))
             _, pred = torch.max(output, 1)
             correct += pred.eq(target.data.view_as(pred)).sum().cpu()
 
@@ -146,13 +146,13 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
     accs = []
     f1s = []
 
-    _, _, _, _, acc_pred, f1 = test_classifier(model, valid_loader, loss_fn)
+    _, _, _, _, acc_pred, f1 = test_classifier(model, valid_loader, loss_fn, do_dro)
     accs.append(acc_pred)
     f1s.append(f1)
     for epoch in range(1, EPOCHS):
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro, debiasing_method)
         scheduler.step()
-        _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn)
+        _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn, do_dro)
         if (acc_pred-acc) > 0.5:
             break
         torch.save(model.state_dict(), save_path)

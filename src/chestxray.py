@@ -59,12 +59,12 @@ def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=Fals
 # biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-train_chestxray("GROUP_DRO_age_CHESTXRAY", do_dro=True)
-train_chestxray("OVERSAMPLING_age_0_CHESTXRAY", DebiasingMethod.OVERSAMPLING)
-train_chestxray("AUGMENTATIONS_age_0_CHESTXRAY", DebiasingMethod.AUGMENTATIONS)
+#train_chestxray("GROUP_DRO_age_CHESTXRAY", do_dro=True)
+#train_chestxray("OVERSAMPLING_age_0_CHESTXRAY", DebiasingMethod.OVERSAMPLING)
+#train_chestxray("AUGMENTATIONS_age_0_CHESTXRAY", DebiasingMethod.AUGMENTATIONS)
 train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", DebiasingMethod.COUNTERFACTUALS)
 train_chestxray("CFREGULARISATION_age_0_CHESTXRAY", DebiasingMethod.CF_REGULARISATION)
-
+train_chestxray("COUNTERFACTUALS_age_0_CHESTXRAY", DebiasingMethod.COUNTERFACTUALS, do_dro=True)
 ############################################################
 
 for idx in range(len(runs_arr)):

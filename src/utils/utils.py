@@ -31,7 +31,7 @@ class Augmentation(Enum):
     BLUR = 4
     SALT_AND_PEPPER_NOISE = 5
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def _add_noise(image, noise_type="gauss"):
     if noise_type == "gauss":

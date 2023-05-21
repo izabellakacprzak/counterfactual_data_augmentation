@@ -8,12 +8,12 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 
-from ..datasets.perturbedMNIST import PerturbedMNIST
-from ..datasets.chestXRay import ChestXRay
-from ..classifier import ConvNet, DenseNet, test_classifier
-from ..utils.params import *
+from datasets.perturbedMNIST import PerturbedMNIST
+from datasets.chestXRay import ChestXRay
+from classifier import ConvNet, DenseNet, test_classifier
+from utils.params import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 def get_global_change_in_performance(base_means, new_means, run_name):
     s_diff = 0
@@ -256,7 +256,7 @@ def test_perturbed_mnist():
 
 def test_chestxray():
     #models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0"]
-    models = ["BASELINE", "BIASED_DRO"]
+    models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "GROUP_DRO_age"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
