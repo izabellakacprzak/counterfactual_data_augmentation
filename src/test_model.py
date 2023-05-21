@@ -7,13 +7,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score
 
-
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_global_change_in_performance(base_means, new_means, run_name):
     s_diff = 0
@@ -74,7 +73,7 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
     ax.set_ylabel(metric_name)
     plt.xticks(rotation=45, ha='right')
     ax.set_xticks(np.arange(num_subgroups) + width)
-    ax.set_xticklabels(['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black'])
+    ax.set_xticklabels(subgroup_names)
 
     # Create a horizontal line at the origin
     ax.axhline(y=0, color='black')
@@ -83,7 +82,6 @@ def plot_metric_subgroup_comparison(subgroup_names, subgroup_metrics, averages, 
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     plt.savefig("{}/subgroups_comparison_{}.png".format(save_dir, metric_name))
-
 
 def plot_metrics_comparison(run_names, run_metrics, metric_name):
     fig = plt.figure(metric_name)
@@ -128,7 +126,6 @@ def _preprocess_age(metrics):
     return processed_metrics
 
 def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
-    subgroup_names = []
     accuracies = []
     recalls = []
     precisions = []
@@ -163,9 +160,6 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
                     fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
 
         for av in unique_attr_values:
-            # save subgroup name
-            subgroup_names.append("{} {}".format(attribute, str(av)))
-
             # save accuracy value
             div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
             acc = 0 if div==0 else (tp_unique[av] + tn_unique[av]) / div
@@ -186,7 +180,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             f1 = 0 if div==0 else tp_unique[av]/div
             f1s.append(f1)
 
-    return subgroup_names, accuracies, precisions, recalls, f1s
+    return accuracies, precisions, recalls, f1s
 
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
@@ -256,11 +250,12 @@ def test_perturbed_mnist():
 
 def test_chestxray():
     #models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0"]
-    models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "GROUP_DRO_age"]
+    models = ["BASELINE", "BIASED_DRO"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
     loss_fn = torch.nn.CrossEntropyLoss()
+    subgroup_names = ['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black']
     
     accs = []
     f1s = []
@@ -291,7 +286,7 @@ def test_chestxray():
         overall_f1s.append(overall_f1)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
-        subgroup_names, attr_acc, attr_pr, attr_rc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        attr_acc, attr_pr, attr_rc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
         attr_accs.append(attr_acc)
         attr_precs.append(attr_pr)
         attr_rcs.append(attr_rc)
