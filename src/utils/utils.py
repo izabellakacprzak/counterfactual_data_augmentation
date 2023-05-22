@@ -84,6 +84,32 @@ def apply_debiasing_method(method, img):
         img = perturb_image(img, perturbation)
         return img
 
+def _batch_generate_cfs(train_data, amount):
+    from dscmchest.generate_counterfactuals import generate_cfs
+    cf_data = []
+    cf_metrics = []
+    while amount > 0:
+        if os.path.exists(CF_CHEST_DATA) and os.path.exists(CF_CHEST_METRICS):
+            cf_data = np.load(CF_CHEST_DATA)
+            cf_metric = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records')
+        
+        a = min(amount, 1000)
+        cf_data_new, cf_metrics_new = generate_cfs(train_data, amount=a, do_a=0)
+        cf_data += cf_data_new
+        cf_metrics += cf_metrics_new
+
+        # Save cf files
+        np.save(CF_CHEST_DATA, np.array(cf_data))
+        keys = cf_metrics[0].keys()
+        with open(CF_CHEST_METRICS, 'x', newline='') as output_file:
+            dict_writer = csv.DictWriter(output_file, keys)
+            dict_writer.writeheader()
+            dict_writer.writerows(cf_metrics)
+
+        amount -= a
+
+    return cf_data, cf_metrics
+
 def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     samples = {
             'age': [],
@@ -95,16 +121,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            from dscmchest.generate_counterfactuals import generate_cfs
-            cf_data, cf_metrics = generate_cfs(train_data, amount=20000, do_a=0)
-
-            # Save cf files
-            np.save(CF_CHEST_DATA, np.array(cf_data))
-            keys = cf_metrics[0].keys()
-            with open(CF_CHEST_METRICS, 'x', newline='') as output_file:
-                dict_writer = csv.DictWriter(output_file, keys)
-                dict_writer.writeheader()
-                dict_writer.writerows(cf_metrics)
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 2000)
 
         else:
             cf_data = np.load(CF_CHEST_DATA)

@@ -15,7 +15,7 @@ class PerturbedMNIST(datasets.VisionDataset):
     super(PerturbedMNIST, self).__init__('files', transform=transform,
                                 target_transform=target_transform)
 
-    prepare_perturbed_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
+    self.group_counts = prepare_perturbed_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
     if train:
       self.data = torch.load("data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt")
       self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
@@ -30,6 +30,10 @@ class PerturbedMNIST(datasets.VisionDataset):
   def __getitem__(self, index):
     img, target = self.data[index]
     metrics = {k: torch.tensor(float(self.metrics[index][k])) for k in ['thickness', 'intensity', 'bias_aligned']}
+    
+    # set group idx for group DRO
+    group_idx = 0 if self.metrics[index]['thickness'] <= 1.5 else 1
+    metrics['group_idx'] = torch.tensor(group_idx)
 
     if self.transform is not None:
       img = self.transform(img)

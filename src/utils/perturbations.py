@@ -59,6 +59,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     train_metrics = []
     test_metrics = []
     class_counts = {}
+    group_counts = {'thick':0, 'thin':0}
 
     l = len(train_data)
     if bias_conflicting_percentage == 0:
@@ -78,6 +79,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             thickness = new_thickness
         im_set.append((perturbed_image, label))
         metrics.append([idx, thickness, intensity, bias_aligned])
+        group_counts['thick'] = group_counts['thick'] + 1
 
     def thin(idx, bias_aligned, im, label, im_set, metrics):
         _, _, thickness, _, _, _ = measure.measure_image(im, verbose=False)
@@ -90,6 +92,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
             thickness = new_thickness
         im_set.append((perturbed_image, label))
         metrics.append([idx, thickness, intensity, bias_aligned])
+        group_counts['thin'] = group_counts['thin'] + 1
 
     count_bias = 0
     count_anti = 0
@@ -143,6 +146,7 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     torch.save(test_set, test_file_name)
     save_to_csv(metrics_test_file_name, col_names, test_metrics)
 
+    return group_counts
 
 def save_to_csv(file_name, col_names, rows):
     with open(file_name, 'w') as f:   

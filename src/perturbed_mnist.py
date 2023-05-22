@@ -8,6 +8,7 @@ from classifier import ConvNet, train_and_evaluate
 from utils.params import *
 from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric
 from utils.utils import DebiasingMethod
+from dro_loss import DROLoss
 
 pred_arr = []
 true_arr = []
@@ -20,7 +21,7 @@ out_channels = 10
 
 transforms_list = transforms.Compose([transforms.ToTensor()])
 
-def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=DebiasingMethod.NONE):
+def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=DebiasingMethod.NONE, do_dro=False):
     runs_arr.append(run_name)
     print("[Perturbed MNIST train]\t" + run_name)
     train_dataset = PerturbedMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=bias_conflicting_perc, method=debiasing_method)
@@ -35,7 +36,16 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
 
     save_path = "../checkpoints/mnist/classifier_" + run_name + ".pt"
-    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, test_loader, torch.nn.CrossEntropyLoss(), save_path, debiasing_method)
+
+    if do_dro:
+        loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
+        n_groups = len(train_dataset.group_counts)
+        group_counts = list(train_dataset.group_counts.values())
+        loss_fn = DROLoss(loss_fn, n_groups, group_counts)
+    else:
+        loss_fn = torch.nn.CrossEntropyLoss()
+
+    accuracies, f1s, y_pred, y_true = train_and_evaluate(model, train_loader, test_loader, test_loader, loss_fn, save_path, do_dro, debiasing_method)
     accs_arr.append(accuracies)
     f1s_arr.append(f1s)
     pred_arr.append(y_pred)
@@ -48,13 +58,14 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
 
 bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
-# train_perturbed_mnist("UNBIASED_PERTURBED_MNIST", 1.0)
-# train_perturbed_mnist("BIASED_PERTURBED_MNIST", bias_conflicting_perc)
-# train_perturbed_mnist("OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.OVERSAMPLING)
-# train_perturbed_mnist("AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.AUGMENTATIONS)
-# train_perturbed_mnist("COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.COUNTERFACTUALS)
-# train_perturbed_mnist("CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc, AugmentationMethod.CF_REGULARISATION)
-train_perturbed_mnist("MIXUP_PERTURBED_MNIST", bias_conflicting_perc, DebiasingMethod.MIXUP)
+train_perturbed_mnist(run_name="UNBIASED_PERTURBED_MNIST", bias_conflicting_perc=1.0)
+train_perturbed_mnist(run_name="BIASED_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc)
+# train_perturbed_mnist(run_name="GROUP_DRO_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
+train_perturbed_mnist(run_name="OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.OVERSAMPLING)
+train_perturbed_mnist(run_name="AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.AUGMENTATIONS)
+train_perturbed_mnist(run_name="MIXUP_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.MIXUP)
+train_perturbed_mnist(run_name="COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+train_perturbed_mnist(run_name="CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.CF_REGULARISATION)
 
 ############################################################
 
