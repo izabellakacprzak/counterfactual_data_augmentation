@@ -13,7 +13,7 @@ from classifier import ConvNet, DenseNet
 from utils.utils import apply_debiasing_method, DebiasingMethod
 from utils.params import *
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 def _get_cf_for_mnist(img, thickness, intensity, label):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x

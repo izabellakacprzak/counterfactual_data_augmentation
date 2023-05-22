@@ -5,14 +5,14 @@ from torchvision import transforms
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, roc_curve
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 def get_global_change_in_performance(base_means, new_means, run_name):
     s_diff = 0
@@ -198,15 +198,23 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
 
     return metrics_true, y_true, y_pred, y_score
 
-def get_label_metrics(y_true, y_pred, y_score, num_classes):
-    ## Get classification report and per-class performance ##
-    report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
-    print(report_dict)
-
+def _plot_roc_curve(y_true, y_score, run_name):
     y_score = [p[1] for p in y_score]
     roc_auc = roc_auc_score(y_true, y_score)
     print("AUC score")
     print(roc_auc)
+
+    fpr, tpr, _ = roc_curve(y_true,  y_score)
+    plt.plot(fpr,tpr)
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.savefig("roc-curve-{}.png".format(run_name))
+    plt.show()
+
+def get_label_metrics(y_true, y_pred, num_classes):
+    ## Get classification report and per-class performance ##
+    report_dict = metrics.classification_report(y_true, y_pred, digits=range(10), output_dict=True)
+    print(report_dict)
 
     matrix = metrics.confusion_matrix(y_true, y_pred)
     accs = matrix.diagonal()/matrix.sum(axis=1)
@@ -237,11 +245,13 @@ def test_perturbed_mnist():
         mnist_model_path = model + "_PERTURBED_MNIST"
         _, y_true, y_pred, y_score = test_pretrained(mnist_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
-        acc, f1, precision, recall, _, _ = get_label_metrics(y_true, y_pred, y_score, num_classes)
+        acc, f1, precision, recall, _, _ = get_label_metrics(y_true, y_pred, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
+
+        _plot_roc_curve(y_true, y_score, model)
 
     plot_metrics_comparison(models, accs, 'MNISTaccuracy')
     plot_metrics_comparison(models, f1s, 'MNISTf1score')
@@ -277,13 +287,15 @@ def test_chestxray():
         chestxray_model_path = model + "_CHESTXRAY"
         metrics_true, y_true, y_pred, y_score = test_pretrained(chestxray_model_path, test_dataset, loss_fn, attributes, in_channels, num_classes)
 
-        acc, f1, precision, recall, overall_acc, overall_f1 = get_label_metrics(y_true, y_pred, y_score, num_classes)
+        acc, f1, precision, recall, overall_acc, overall_f1 = get_label_metrics(y_true, y_pred, num_classes)
         accs.append(acc)
         f1s.append(f1)
         precisions.append(precision)
         recalls.append(recall)
         overall_accs.append(overall_acc)
         overall_f1s.append(overall_f1)
+
+        _plot_roc_curve(y_true, y_score, model)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
         attr_acc, attr_pr, attr_rc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)

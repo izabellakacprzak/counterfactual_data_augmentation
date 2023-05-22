@@ -14,7 +14,7 @@ import seaborn as sns
 from utils.params import *
 from morphomnist import measure
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 def pretty_print_evaluation(y_pred, y_true, labels):
     confusion_matrix = get_confusion_matrix(y_pred, y_true)

@@ -8,7 +8,7 @@ from utils.evaluate import visualise_t_sne
 from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 device = torch.device("cpu")
 def visualise_embeddings(model_path, test_dataset, in_channels, out_channels, img_dim):
     if "MNIST" in model_path:

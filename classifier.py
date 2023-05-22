@@ -11,7 +11,7 @@ from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 def mnist_regularisation(model, x, metrics, labels, logits):
     from dscm.generate_counterfactuals import generate_counterfactual_for_x
@@ -90,7 +90,7 @@ def run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro=False, debi
         optimiser.zero_grad()
 
         if debiasing_method==DebiasingMethod.MIXUP:
-            data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device("cuda:0"))
+            data, targets_a, targets_b, lam = mixup_data(data, target, 1, device==torch.device(GPU))
             logits = model(data)
             loss = lam * loss_fn(logits, targets_a) + (1 - lam) * loss_fn(logits, targets_b)
         else:
