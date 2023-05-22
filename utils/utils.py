@@ -91,7 +91,7 @@ def _batch_generate_cfs(train_data, amount):
     while amount > 0:
         if os.path.exists(CF_CHEST_DATA) and os.path.exists(CF_CHEST_METRICS):
             cf_data = np.load(CF_CHEST_DATA)
-            cf_metric = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records')
+            cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records')
         
         a = min(amount, 1000)
         cf_data_new, cf_metrics_new = generate_cfs(train_data, amount=a, do_a=0)
@@ -101,7 +101,8 @@ def _batch_generate_cfs(train_data, amount):
         # Save cf files
         np.save(CF_CHEST_DATA, np.array(cf_data))
         keys = cf_metrics[0].keys()
-        with open(CF_CHEST_METRICS, 'x', newline='') as output_file:
+        mode = 'w' if os.path.exists(CF_CHEST_METRICS) else 'x'
+        with open(CF_CHEST_METRICS, mode, newline='') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(cf_metrics)
