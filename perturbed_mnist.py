@@ -35,7 +35,7 @@ def train_perturbed_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=
 
     model = ConvNet(in_channels=in_channels, out_channels=out_channels)
 
-    save_path = "../checkpoints/mnist/classifier_" + run_name + ".pt"
+    save_path = "checkpoints/mnist/classifier_" + run_name + ".pt"
 
     if do_dro:
         loss_fn = torch.nn.CrossEntropyLoss(reduction='none')
@@ -60,12 +60,14 @@ bias_conflicting_perc = 0.01
 # plot_dataset_digits(train_dataset)
 train_perturbed_mnist(run_name="UNBIASED_PERTURBED_MNIST", bias_conflicting_perc=1.0)
 train_perturbed_mnist(run_name="BIASED_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc)
-# train_perturbed_mnist(run_name="GROUP_DRO_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
+train_perturbed_mnist(run_name="GROUP_DRO_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
 train_perturbed_mnist(run_name="OVERSAMPLING_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.OVERSAMPLING)
 train_perturbed_mnist(run_name="AUGMENTATIONS_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.AUGMENTATIONS)
 train_perturbed_mnist(run_name="MIXUP_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.MIXUP)
 train_perturbed_mnist(run_name="COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.COUNTERFACTUALS)
 train_perturbed_mnist(run_name="CFREGULARISATION_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.CF_REGULARISATION)
+train_perturbed_mnist(run_name="GROUP_DRO_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
+train_perturbed_mnist(run_name="COUNTERFACTUALS_PERTURBED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.COUNTERFACTUALS, do_dro=True)
 
 ############################################################
 

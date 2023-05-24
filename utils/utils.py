@@ -172,7 +172,7 @@ def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING)
         metrics = train_metrics[idx]
         if metrics['bias_aligned'] and (label in THICK_CLASSES or label in THIN_CLASSES):
             for _ in range(10):
-                new_data.append((_apply_debiasing_method(method, img), label))
+                new_data.append((apply_debiasing_method(method, img), label))
                 new_m = metrics.copy()
                 new_m['bias_aligned'] = False
                 new_metrics.append(new_m)
