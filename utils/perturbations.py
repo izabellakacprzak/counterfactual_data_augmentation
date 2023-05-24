@@ -109,9 +109,11 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
         if idx % perc == 0: # bias-conflicting samples
             count_anti += 1
             if random.choice([0,1]) == 0:
-                thicken(curr_idx, False, im, label, train_set, train_metrics)
+                ba = True if (label in THICK_CLASSES) else False
+                thicken(curr_idx, ba, im, label, train_set, train_metrics)
             else:
-                thin(curr_idx, False, im, label, train_set, train_metrics)
+                ba = True if (label in THIN_CLASSES) else False
+                thin(curr_idx, ba, im, label, train_set, train_metrics)
 
         else: # bias-aligned samples
             count_bias += 1
