@@ -9,6 +9,7 @@ import torch
 import torchvision
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 
 from .params import *
 from enum import Enum
@@ -86,20 +87,27 @@ def apply_debiasing_method(method, img):
 
 def _batch_generate_cfs(train_data, amount):
     from dscmchest.generate_counterfactuals import generate_cfs
-    cf_data = []
+    cf_data = np.array([], dtype=np.float32).reshape(0, 1, 192, 192)
     cf_metrics = []
+    idx = 0
+    indices = list(range(len(train_data)))
     while amount > 0:
         if os.path.exists(CF_CHEST_DATA) and os.path.exists(CF_CHEST_METRICS):
             cf_data = np.load(CF_CHEST_DATA)
             cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records')
         
         a = min(amount, 1000)
-        cf_data_new, cf_metrics_new = generate_cfs(train_data, amount=a, do_a=0)
-        cf_data += cf_data_new
-        cf_metrics += cf_metrics_new
+
+        s_indices = indices[idx:]
+        sampler = SubsetRandomSampler(s_indices)
+        loader = DataLoader(train_data, batch_size=1, sampler=sampler)
+        cf_data_new, cf_metrics_new = generate_cfs(loader, amount=a, do_r=2)
+        if len(cf_data_new) != 0:
+            cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
+            cf_metrics += cf_metrics_new
 
         # Save cf files
-        np.save(CF_CHEST_DATA, np.array(cf_data))
+        np.save(CF_CHEST_DATA, cf_data)
         keys = cf_metrics[0].keys()
         mode = 'w' if os.path.exists(CF_CHEST_METRICS) else 'x'
         with open(CF_CHEST_METRICS, mode, newline='') as output_file:
@@ -108,6 +116,7 @@ def _batch_generate_cfs(train_data, amount):
             dict_writer.writerows(cf_metrics)
 
         amount -= a
+        idx += a
 
     return cf_data, cf_metrics
 
@@ -122,8 +131,8 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 2000)
-
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 66000)
+            print(type(cf_data))
         else:
             cf_data = np.load(CF_CHEST_DATA)
             cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
@@ -142,8 +151,8 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
         # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
        
-        if 18<=(ms['age'].item())<=39:
-            for _ in range(2):
+        if ms['race'].item() == 2:
+            for _ in range(4):
                 # TODO: make sure these are copied not referenced
                 samples['age'].append(ms['age'])
                 samples['sex'].append(ms['sex'])
