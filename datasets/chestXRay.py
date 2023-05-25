@@ -62,12 +62,14 @@ class ChestXRay(datasets.VisionDataset):
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
         img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
 
-        disease = np.zeros(len(self.labels)-1, dtype=int)
-        for i in range(1, len(self.labels)):
-            disease[i-1] = np.array(self.data.loc[idx,
-                                    self.labels[i]] == 1)
+        # disease = np.zeros(len(self.labels)-1, dtype=int)
+        # for i in range(1, len(self.labels)):
+            # disease[i-1] = np.array(self.data.loc[idx,
+                                    # self.labels[i]] == 1)
 
-        finding = 0 if disease.sum() == 0 else 1
+        # finding = 0 if disease.sum() == 0 else 1
+        # finding Pleural Effusion
+        finding = 1 if self.data.loc[idx, 'Pleural Effusion'] == 1 else 0
         
         self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['finding'].append(finding)
