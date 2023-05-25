@@ -97,14 +97,14 @@ def visualise_t_sne(test_loader, model, img_dim, file_name):
     _plot_tsne(df_subset, "augmented", file_name)
 
 
-def visualise_embeddings(model_path, test_dataset, in_channels, out_channels, img_dim):
+def visualise_embeddings(model_path, dataset, in_channels, out_channels, img_dim):
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
     visualise_t_sne(test_loader, model, img_dim, "plots/{}t_sne".format(model_path))
 
 def visualise_perturbed_mnist():
@@ -125,7 +125,7 @@ def visualise_chestxray():
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"
-        visualise_embeddings(chestxray_model_path, test_dataset, 1, 2, 192)
+        # visualise_embeddings(chestxray_model_path, test_dataset, 1, 2, 192)
 
         # visualise embeddings on train set to compare originals and cfs
         visualise_embeddings(chestxray_model_path, train_dataset, 1, 2, 192)
