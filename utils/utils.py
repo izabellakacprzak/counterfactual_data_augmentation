@@ -101,7 +101,7 @@ def _batch_generate_cfs(train_data, amount):
         s_indices = indices[idx:]
         sampler = SubsetRandomSampler(s_indices)
         loader = DataLoader(train_data, batch_size=1, sampler=sampler)
-        cf_data_new, cf_metrics_new = generate_cfs(loader, amount=a, do_r=2)
+        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_f=0)
         if len(cf_data_new) != 0:
             cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
             cf_metrics += cf_metrics_new
@@ -116,7 +116,7 @@ def _batch_generate_cfs(train_data, amount):
             dict_writer.writerows(cf_metrics)
 
         amount -= a
-        idx += a
+        idx = last_idx+1
 
     return cf_data, cf_metrics
 
@@ -131,7 +131,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 66000)
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 40000)
             print(type(cf_data))
         else:
             cf_data = np.load(CF_CHEST_DATA)

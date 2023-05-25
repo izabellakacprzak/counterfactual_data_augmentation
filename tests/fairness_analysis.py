@@ -7,6 +7,9 @@ from tqdm import tqdm
 import numpy as np
 import os
 
+import sys
+sys.path.append("..")
+
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet
@@ -29,8 +32,8 @@ def _get_cf_for_chestxray(img, metrics, label, do_a, do_f, do_r, do_s):
            'race': metrics['race'],
            'sex': metrics['sex'],
            'finding': label}
-    cf, cf_metrics = generate_cf(obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
-    return cf, cf_metrics
+    cf = generate_cf(obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
+    return cf
 
 def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
     originals = []
@@ -46,10 +49,10 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_a, do_f, do_r, do_s = 0, None, None, None
+                        do_a, do_f, do_r, do_s = None, None, 2, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
-                        cf, cf_metrics = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
-                        if len(cf_metrics) != 0:
+                        cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
+                        if len(cf) != 0:
                             perturbed.append(torch.tensor(cf).to(device))
                             originals.append(data[i][0])
                 else:
@@ -81,14 +84,14 @@ def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness
         prob = torch.nn.functional.softmax(logits, dim=1).tolist()
         perturbed_probs.append(prob[fairness_label])
 
-    os.remove("originals.txt")    
-    os.remove('cfs.txt')
-    with open('originals.txt', 'x') as fp:
+    os.remove("originals{}.txt".format(run_name))    
+    os.remove('cfs{}.txt'.format(run_name))
+    with open('originals{}.txt'.format(run_name), 'x') as fp:
         for item in original_probs:
             # write each item on a new line
             fp.write("%s\n" % item)
     
-    with open('cfs.txt', 'x') as fp:
+    with open('cfs{}.txt'.format(run_name), 'x') as fp:
         for item in perturbed_probs:
             # write each item on a new line
             fp.write("%s\n" % item)
@@ -96,14 +99,14 @@ def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness
     
     fig = plt.figure(run_name)
     plt.scatter(np.array(original_probs), perturbed_probs)
-    plt.savefig("plots/fairness_age_0-19.png")
+    plt.savefig("plots/fairness_{}.png".format(run_name))
 
 def fairness_analysis(model_path, originals, perturbed, in_channels, out_channels, fairness_label):
     if "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
-        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+        model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
     model.eval()
     classifier_fairness_analysis(model, model_path, originals, perturbed, fairness_label)
@@ -124,13 +127,13 @@ def visualise_perturbed_mnist():
         fairness_analysis(mnist_model_path, originals, perturbed, 1, 10, 0)
 
 def visualise_chestxray():
-    models = ["COUNTERFACTUALS_age_0"]
+    models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
     model_type = "_CHESTXRAY"
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    do_cfs = False
+    do_cfs = True
     originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_type)
 
     for model in models:

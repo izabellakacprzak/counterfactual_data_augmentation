@@ -29,7 +29,7 @@ class ChestXRay(datasets.VisionDataset):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
-    self.data = pd.read_csv(csv_file)
+    self.data = pd.read_csv(csv_file).head(2000)
 
     self.transform = transform
     self.labels = [
@@ -78,7 +78,7 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['sex'].append(sex)
  
         # groups for group DRO loss
-        group_idx = (age//20) % 5
+        group_idx = race
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
@@ -97,7 +97,7 @@ class ChestXRay(datasets.VisionDataset):
 
     # print(f'sample before: {sample}')
 
-    group_idx = torch.tensor((sample['age']//20) % 5)
+    group_idx = torch.tensor(sample['race'])
     for k, v in sample.items():
         sample[k] = torch.tensor(v)
 

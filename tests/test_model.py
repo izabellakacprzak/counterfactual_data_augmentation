@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score, roc_curve
 
+import sys
+sys.path.append("..")
+
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet, test_classifier
@@ -208,7 +211,7 @@ def _plot_roc_curve(y_true, y_score, run_name):
     plt.plot(fpr,tpr)
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    plt.savefig("roc-curve-{}.png".format(run_name))
+    plt.savefig("plots/roc-curve-{}.png".format(run_name))
     plt.show()
 
 def get_label_metrics(y_true, y_pred, num_classes):
@@ -260,7 +263,7 @@ def test_perturbed_mnist():
 
 def test_chestxray():
     #models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0"]
-    models = ["BASELINE", "BIASED_DRO"]
+    models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
