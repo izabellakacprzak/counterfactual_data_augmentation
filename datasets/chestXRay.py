@@ -55,6 +55,7 @@ class ChestXRay(datasets.VisionDataset):
         'finding': [],
         'x': [],
         'race': [],
+        'augmented': []
     }
 
     self.group_counts = {}
@@ -76,6 +77,7 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['race'].append(race)
         sex = self.data.loc[idx, 'sex_label']
         self.samples['sex'].append(sex)
+        self.samples['augmented'].append(0)
  
         # groups for group DRO loss
         group_idx = race
@@ -91,6 +93,7 @@ class ChestXRay(datasets.VisionDataset):
     self.samples['age'] += new_samples['age']
     self.samples['race'] += new_samples['race']
     self.samples['sex'] += new_samples['sex']
+    self.samples['augmented'] += new_samples['augmented']
 
   def __getitem__(self, idx):
     sample = {k: v[idx] for k, v in self.samples.items()}
@@ -105,7 +108,8 @@ class ChestXRay(datasets.VisionDataset):
     if self.transform:
         sample['x'] = self.transform(sample['x'])
 
-    metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race'], 'group_idx':group_idx}
+    metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race'],
+               'augmented':sample['augmented'], 'group_idx':group_idx}
     return sample['x'], metrics, sample['finding']
 
   def __len__(self):

@@ -127,6 +127,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             'finding': [],
             'x': [],
             'race': [],
+            'augmented': [],
         }
     
     if method == DebiasingMethod.COUNTERFACTUALS:
@@ -143,6 +144,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             samples['finding'].append(metrics['finding'])
             samples['x'].append(img)
             samples['race'].append(metrics['race'])
+            samples['augmented'].append(1)
 
         return samples
 
@@ -160,6 +162,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
                 samples['finding'].append(lab)
                 new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
                 samples['x'].append(new_x)
+                samples['augmented'].append(1)
 
     return samples
 
