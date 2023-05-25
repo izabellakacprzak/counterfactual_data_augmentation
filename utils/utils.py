@@ -116,7 +116,7 @@ def _batch_generate_cfs(train_data, amount):
             dict_writer.writerows(cf_metrics)
 
         amount -= a
-        idx = last_idx+1
+        idx += last_idx+1
 
     return cf_data, cf_metrics
 
@@ -127,6 +127,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             'finding': [],
             'x': [],
             'race': [],
+            'augmented': [],
         }
     
     if method == DebiasingMethod.COUNTERFACTUALS:
@@ -143,6 +144,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             samples['finding'].append(metrics['finding'])
             samples['x'].append(img)
             samples['race'].append(metrics['race'])
+            samples['augmented'].append(1)
 
         return samples
 
@@ -160,6 +162,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
                 samples['finding'].append(lab)
                 new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
                 samples['x'].append(new_x)
+                samples['augmented'].append(1)
 
     return samples
 

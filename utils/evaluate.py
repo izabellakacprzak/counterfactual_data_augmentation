@@ -2,14 +2,10 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 import random
-import time
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from scipy import stats
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-import seaborn as sns
 
 from utils.params import *
 from morphomnist import measure
@@ -124,105 +120,3 @@ def get_attribute_counts_chestxray(dataset):
     print("[ChestXRay attribute counts]\tDisease negative counts:")
     print("[ChestXRay attribute counts]\t{}".format(negative_counts))
 
-def _get_embeddings(model, data_loader, img_dim):
-    model.eval()
-    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
-
-    embeddings = np.zeros(shape=(0, img_dim*img_dim))
-    labels = np.zeros(shape=(0))
-    race = np.zeros(shape=(0))
-    sex = np.zeros(shape=(0))
-    age = np.zeros(shape=(0))
-    for _, (data, metrics, target) in enumerate(data_loader):
-        data, target = data.to(device), target.to(device)
-        output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
-        s = output.shape
-        output = output.reshape((s[0], img_dim*img_dim))
-        labels = np.concatenate((labels, target.cpu().numpy().ravel()))
-        embeddings = np.concatenate([embeddings, output],axis=0)
-        race = np.concatenate((race, metrics['race'].tolist()))
-        sex = np.concatenate((sex, metrics['sex'].tolist()))
-        age = np.concatenate((age, metrics['age'].tolist()))
-
-    return embeddings, race, sex, age, labels
-
-def visualise_t_sne(test_loader, model, img_dim, file_name):
-    embeddings, race, sex, age, labels = _get_embeddings(model, test_loader, img_dim)
-    
-    feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
-    df = pd.DataFrame(embeddings, columns=feat_cols)
-    df['y'] = labels
-    df['race'] = race.astype(int)
-    df['sex'] = sex.astype(int)
-    df['label'] = df['y'].apply(lambda i: str(i))
-
-    age = age.astype(int)
-    for idx, a in enumerate(age):
-        age[idx] = (a/20) % 5
-    df['age'] = age
-
-    N = 10000
-    rndperm = np.random.permutation(df.shape[0])
-    df_subset = df.loc[rndperm[:N],:].copy()
-    data_subset = df_subset[feat_cols].values
-
-    # reduce dimensions before feeding into t-SNE
-    pca_50 = PCA(n_components=50)
-    pca_result_50 = pca_50.fit_transform(data_subset)
-
-    time_start = time.time()
-    tsne = TSNE(n_components=2, verbose=1, perplexity=30, n_iter=5000)
-    tsne_pca_results = tsne.fit_transform(pca_result_50)
-
-    print('[t-SNE]\tt-SNE done! Time elapsed: {} seconds'.format(time.time()-time_start))
-
-    df_subset['tsne-pca50-one'] = tsne_pca_results[:,0]
-    df_subset['tsne-pca50-two'] = tsne_pca_results[:,1]
-
-    plt.figure(figsize=(16,10))
-    plot = sns.jointplot(
-        x="tsne-pca50-one", y="tsne-pca50-two",
-        hue="y",
-        palette=sns.color_palette("tab10", 10),
-        data=df_subset,
-        legend="full",
-        alpha=0.3
-    )
-    #fig = plot.get_figure()
-    plot.savefig(file_name + "_labels.png") 
-
-    plt.figure(figsize=(16,10))
-    plot = sns.jointplot(
-        x="tsne-pca50-one", y="tsne-pca50-two",
-        hue="race",
-        palette=sns.color_palette("hls", 10),
-        data=df_subset,
-        legend="full",
-        alpha=0.3
-    )
-    #fig = plot.get_figure()
-    plot.savefig(file_name + "_race.png") 
-
-    plt.figure(figsize=(16,10))
-    plot = sns.jointplot(
-        x="tsne-pca50-one", y="tsne-pca50-two",
-        hue="sex",
-        palette=sns.color_palette("hls", 10),
-        data=df_subset,
-        legend="full",
-        alpha=0.3
-    )
-    #fig = plot.get_figure()
-    plot.savefig(file_name + "_sex.png") 
-
-    plt.figure(figsize=(16,10))
-    plot = sns.jointplot(
-        x="tsne-pca50-one", y="tsne-pca50-two",
-        hue="age",
-        palette=sns.color_palette("hls", 10),
-        data=df_subset,
-        legend="full",
-        alpha=0.3
-    )
-    #fig = plot.get_figure()
-    plot.savefig(file_name + "_age.png") 
