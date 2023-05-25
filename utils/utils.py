@@ -208,3 +208,19 @@ def mixup_data(x, y, alpha=1.0, use_cuda=True):
     mixed_x = lam * x + (1 - lam) * x[index, :]
     y_a, y_b = y, y[index]
     return mixed_x, y_a, y_b, lam
+
+def preprocess_age(metrics):
+    processed_metrics = []
+    for m in metrics:
+        if 0 <= m <= 19:
+            processed_metrics.append(0)
+        elif 20 <= m <= 39:
+            processed_metrics.append(1)
+        elif 40 <= m <= 59:
+            processed_metrics.append(2)
+        elif 60 <= m <= 79:
+            processed_metrics.append(3)
+        elif 80 <= m <= 100:
+            processed_metrics.append(4)
+
+    return processed_metrics

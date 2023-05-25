@@ -14,6 +14,7 @@ from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
+from utils.utils import preprocess_age
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
@@ -112,22 +113,6 @@ def plot_metrics_comparison(run_names, run_metrics, metric_name):
         os.makedirs(save_dir)
     plt.savefig("{}{}.png".format(save_dir, metric_name))
 
-def _preprocess_age(metrics):
-    processed_metrics = []
-    for m in metrics:
-        if 0 <= m <= 19:
-            processed_metrics.append(0)
-        elif 20 <= m <= 39:
-            processed_metrics.append(1)
-        elif 40 <= m <= 59:
-            processed_metrics.append(2)
-        elif 60 <= m <= 79:
-            processed_metrics.append(3)
-        elif 80 <= m <= 100:
-            processed_metrics.append(4)
-
-    return processed_metrics
-
 def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     accuracies = []
     recalls = []
@@ -139,7 +124,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
 
         attr_values = metrics_true[idx]
         if attribute == 'age':
-            attr_values = _preprocess_age(attr_values)
+            attr_values = preprocess_age(attr_values)
         
         unique_attr_values = set(attr_values)
 
