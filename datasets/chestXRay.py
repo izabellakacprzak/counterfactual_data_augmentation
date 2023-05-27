@@ -7,6 +7,7 @@ from utils.utils import *
 from tqdm import tqdm
 from skimage.io import imread
 import torch.nn.functional as F
+from analise_testset import analise_dataset
 
 def norm(batch):
     for k, v in batch.items():
@@ -29,7 +30,7 @@ class ChestXRay(datasets.VisionDataset):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
-    self.data = pd.read_csv(csv_file).head(2000)
+    self.data = pd.read_csv(csv_file)
 
     self.transform = transform
     self.labels = [
@@ -59,18 +60,28 @@ class ChestXRay(datasets.VisionDataset):
     }
 
     self.group_counts = {}
+    #positive = 0
+    #negative = 0
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
         img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
 
-        # disease = np.zeros(len(self.labels)-1, dtype=int)
-        # for i in range(1, len(self.labels)):
-            # disease[i-1] = np.array(self.data.loc[idx,
-                                    # self.labels[i]] == 1)
+        disease = np.zeros(len(self.labels)-1, dtype=int)
+        for i in range(1, len(self.labels)):
+            disease[i-1] = np.array(self.data.loc[idx, self.labels[i]] == 1)
 
-        # finding = 0 if disease.sum() == 0 else 1
+        #finding = 0 if disease.sum() == 0 else 1
+        
+        # only consider patients with Pleural Effusion and healthy patients
+        if (disease.sum() >= 1 and self.data.loc[idx, 'Pleural Effusion'] == 0):
+            continue
         # finding Pleural Effusion
         finding = 1 if self.data.loc[idx, 'Pleural Effusion'] == 1 else 0
         
+        #if finding:
+        #    positive = positive+1
+        #else:
+        #    negative = negative +1
+
         self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['finding'].append(finding)
         age = self.data.loc[idx, 'age']
@@ -82,11 +93,16 @@ class ChestXRay(datasets.VisionDataset):
         self.samples['augmented'].append(0)
  
         # groups for group DRO loss
-        group_idx = race
+        age = (age//20)%5
+        group_idx = finding
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
+    #print(positive)
+    #print(negative)
     if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
       self._debias(method)
+    
+    analise_dataset(self)
 
   def _debias(self, method):
     new_samples = debias_chestxray(self, method)

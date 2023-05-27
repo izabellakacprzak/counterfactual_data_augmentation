@@ -124,7 +124,10 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
 
         attr_values = metrics_true[idx]
         if attribute == 'age':
-            attr_values = preprocess_age(attr_values)
+            processed = []
+            for m in attr_values:
+                processed.append(preprocess_age(m))
+            attr_values = processed
         
         unique_attr_values = set(attr_values)
 
@@ -247,8 +250,9 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    #models = ["BASELINE", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0"]
-    models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
+    models = ["BASELINE"]
+    #models = ["BASELINE", "OVERSAMPLING_age0", "AUGMENTATIONS_age0"]
+    #models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']

@@ -7,15 +7,16 @@ from sklearn.manifold import TSNE
 import seaborn as sns
 import matplotlib.pyplot as plt
 import time
+import pandas as pd
 
 import sys
 sys.path.append("..")
 
 from datasets.perturbedMNIST import PerturbedMNIST
 from datasets.chestXRay import ChestXRay
-from utils.evaluate import visualise_t_sne
 from classifier import ConvNet, DenseNet, test_classifier
 from utils.params import *
+from utils.utils import DebiasingMethod
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
@@ -29,7 +30,9 @@ def _get_embeddings(model, data_loader, img_dim):
     sex = np.zeros(shape=(0))
     age = np.zeros(shape=(0))
     augmented = np.zeros(shape=(0))
-    for _, (data, metrics, target) in enumerate(data_loader):
+    for idx, (data, metrics, target) in enumerate(data_loader):
+        if idx*BATCH_SIZE >= 10000:
+            break
         data, target = data.to(device), target.to(device)
         output = feature_extractor(data).detach().cpu().squeeze(1).numpy()
         s = output.shape
@@ -104,7 +107,7 @@ def visualise_embeddings(model_path, dataset, in_channels, out_channels, img_dim
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
-    test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
+    test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
     visualise_t_sne(test_loader, model, img_dim, "plots/{}t_sne".format(model_path))
 
 def visualise_perturbed_mnist():
@@ -120,8 +123,8 @@ def visualise_perturbed_mnist():
 def visualise_chestxray():
     models = ["BASELINE", "GROUP_DRO_age", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0", "COUNTERFACTUALS_DRO_age_0"]
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
-    test_dataset = ChestXRay(mode="test", transform=transforms_list)
-    train_dataset = ChestXRay(mode="train", transform=transforms_list)
+    #test_dataset = ChestXRay(mode="test", transform=transforms_list)
+    train_dataset = ChestXRay(mode="train", transform=transforms_list, method=DebiasingMethod.COUNTERFACTUALS)
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"

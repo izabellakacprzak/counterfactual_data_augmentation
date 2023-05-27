@@ -1,4 +1,7 @@
 import torch
+from utils.params import *
+
+device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 # adapted from: https://github.com/kohpangwei/group_DRO.git
 class DROLoss:
@@ -12,14 +15,14 @@ class DROLoss:
         self.group_counts = group_counts
 
         if adj is not None:
-            self.adj = torch.from_numpy(adj).float().cuda()
+            self.adj = torch.from_numpy(adj).float().to(device)
         else:
-            self.adj = torch.zeros(self.n_groups).float().cuda()
+            self.adj = torch.zeros(self.n_groups).float().to(device)
 
         # quantities maintained throughout training
-        self.adv_probs = torch.ones(self.n_groups).cuda()/self.n_groups
-        self.exp_avg_loss = torch.zeros(self.n_groups).cuda()
-        self.exp_avg_initialized = torch.zeros(self.n_groups).byte().cuda()
+        self.adv_probs = torch.ones(self.n_groups).to(device)/self.n_groups
+        self.exp_avg_loss = torch.zeros(self.n_groups).to(device)
+        self.exp_avg_initialized = torch.zeros(self.n_groups).byte().to(device)
 
         #self.reset_stats()
 
@@ -46,7 +49,7 @@ class DROLoss:
 
     def compute_group_avg(self, losses, group_idx):
         # compute observed counts and mean loss for each group
-        group_map = (group_idx == torch.arange(self.n_groups).unsqueeze(1).long().cuda()).float()
+        group_map = (group_idx == torch.arange(self.n_groups).unsqueeze(1).long().to(device)).float()
         group_count = group_map.sum(1)
         group_denom = group_count + (group_count==0).float() # avoid nans 
         group_loss = (group_map @ losses.view(-1))/group_denom

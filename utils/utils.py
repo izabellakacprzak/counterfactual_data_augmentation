@@ -101,7 +101,7 @@ def _batch_generate_cfs(train_data, amount):
         s_indices = indices[idx:]
         sampler = SubsetRandomSampler(s_indices)
         loader = DataLoader(train_data, batch_size=1, sampler=sampler)
-        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_f=0)
+        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_f=1)
         if len(cf_data_new) != 0:
             cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
             cf_metrics += cf_metrics_new
@@ -132,7 +132,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 40000)
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 45000)
             print(type(cf_data))
         else:
             cf_data = np.load(CF_CHEST_DATA)
@@ -152,9 +152,9 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     for idx in range(len(train_data)):
         # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
-       
-        if ms['race'].item() == 2:
-            for _ in range(4):
+        a = preprocess_age(ms['age'].item())
+        if lab == 1:
+            for _ in range(1):
                 # TODO: make sure these are copied not referenced
                 samples['age'].append(ms['age'])
                 samples['sex'].append(ms['sex'])
@@ -204,7 +204,7 @@ def mixup_data(x, y, alpha=1.0, use_cuda=True):
 
     batch_size = x.size()[0]
     if use_cuda:
-        index = torch.randperm(batch_size).cuda()
+        index = torch.randperm(batch_size).to(device)
     else:
         index = torch.randperm(batch_size)
 

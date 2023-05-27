@@ -60,12 +60,12 @@ def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=Fals
 # and balanced with counterfactual images
 
 #train_chestxray(run_name="BASELINE_CHESTXRAY")
-#train_chestxray(run_name="OVERSAMPLING_black_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
-#train_chestxray(run_name="AUGMENTATIONS_black_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
-#train_chestxray(run_name="MIXUP_black_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
-#train_chestxray(run_name="GROUP_DRO_race_CHESTXRAY", do_dro=True)
-#train_chestxray(run_name="COUNTERFACTUALS_no_finding_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
-#train_chestxray(run_name="COUNTERFACTUALS_DRO_black_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS, do_dro=True)
+train_chestxray(run_name="OVERSAMPLING_positive_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
+train_chestxray(run_name="AUGMENTATIONS_positive_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
+#train_chestxray(run_name="MIXUP_positive_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
+train_chestxray(run_name="GROUP_DRO_label_CHESTXRAY", do_dro=True)
+train_chestxray(run_name="COUNTERFACTUALS_positive_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+train_chestxray(run_name="COUNTERFACTUALS_DRO_positive_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS, do_dro=True)
 train_chestxray(run_name="CFREGULARISATION_black_CHESTXRAY", debiasing_method=DebiasingMethod.CF_REGULARISATION)
 ############################################################
 

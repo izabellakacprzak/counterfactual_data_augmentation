@@ -49,43 +49,46 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_a, do_f, do_r, do_s = None, None, 2, None
+                        do_a, do_f, do_r, do_s = None, 1, None, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
                         if len(cf) != 0:
                             perturbed.append(torch.tensor(cf).to(device))
-                            originals.append(data[i][0])
+                            originals.append(data[i])
                 else:
+                    originals.append(data[i])
                     img = apply_debiasing_method(DebiasingMethod.AUGMENTATIONS, data[i][0].cpu().detach().numpy())
-                    perturbed.append(torch.tensor(img).to(device))
+                    perturbed.append(torch.tensor(img).unsqueeze(0).to(device))
                     
-    perturbed = torch.stack(perturbed)
-    if not do_cfs:
-        perturbed = perturbed.unsqueeze(1)
+    #perturbed = torch.stack(perturbed)
+    #if not do_cfs:
+    #    perturbed = perturbed.unsqueeze(1)
 
     return originals, perturbed
 
 # Generates a scatterplot of how similar predictions made by classifier 
 # on counterfactual data are to predictions on original data
 # all points should be clustered along the y=x line - meaning high classifier fairness
-def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness_label):
+def classifier_fairness_analysis(model, run_name, originals, perturbeds, fairness_label):
     original_probs = []
     perturbed_probs = []
-    for idx in range(len(originals)):
+    for idx in tqdm(range(len(originals))):
         original = originals[idx]
-        perturbed = perturbed[idx]
+        perturbed = perturbeds[idx]
 
         original = original.to(device)
-        logits = model(original).cpu()
+        logits = model(original.unsqueeze(0)).cpu()
         prob = torch.nn.functional.softmax(logits, dim=1).tolist()
         original_probs.append(prob[fairness_label])
         
-        logits = model(perturbed).cpu()
+        logits = model(perturbed.unsqueeze(0)).cpu()
         prob = torch.nn.functional.softmax(logits, dim=1).tolist()
         perturbed_probs.append(prob[fairness_label])
 
-    os.remove("originals{}.txt".format(run_name))    
-    os.remove('cfs{}.txt'.format(run_name))
+    if os.path.exists("originals{}.txt".format(run_name)):
+        os.remove("originals{}.txt".format(run_name))    
+    if os.path.exists("cfs{}.txt".format(run_name)):
+        os.remove('cfs{}.txt'.format(run_name))
     with open('originals{}.txt'.format(run_name), 'x') as fp:
         for item in original_probs:
             # write each item on a new line
@@ -97,9 +100,9 @@ def classifier_fairness_analysis(model, run_name, originals, perturbed, fairness
             fp.write("%s\n" % item)
     print('Done')
     
-    fig = plt.figure(run_name)
-    plt.scatter(np.array(original_probs), perturbed_probs)
-    plt.savefig("plots/fairness_{}.png".format(run_name))
+   # fig = plt.figure(run_name)
+   # plt.scatter(np.array(original_probs), perturbed_probs)
+   # plt.savefig("plots/fairness_{}.png".format(run_name))
 
 def fairness_analysis(model_path, originals, perturbed, in_channels, out_channels, fairness_label):
     if "MNIST" in model_path:
@@ -127,14 +130,15 @@ def visualise_perturbed_mnist():
         fairness_analysis(mnist_model_path, originals, perturbed, 1, 10, 0)
 
 def visualise_chestxray():
-    models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
+    models = ["BASELINE"]
+    #models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
     model_type = "_CHESTXRAY"
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     do_cfs = True
-    originals, perturbed = _gen_cfs(test_loader, 3, do_cfs, model_type)
+    originals, perturbed = _gen_cfs(test_loader, 5, do_cfs, model_type)
 
     for model in models:
         chestxray_model_path = model + model_type
