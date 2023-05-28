@@ -18,6 +18,14 @@ from utils.utils import preprocess_age
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
+def tpr_disparity(tprs):
+    tpr_mean = sum(tprs)/len(tprs)
+    disparities = []
+    for tpr in tprs:
+        disparities.append(tpr-(tpr_mean-tpr))
+
+    return disparities
+
 def get_global_change_in_performance(base_means, new_means, run_name):
     s_diff = 0
     s_base = 0
@@ -118,6 +126,8 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
     recalls = []
     precisions = []
     f1s = []
+    tprs = []
+    disparities = []
     for idx, attribute in enumerate(attributes):
         if attribute in ['thickness']:
             continue
@@ -129,7 +139,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
                 processed.append(preprocess_age(m))
             attr_values = processed
         
-        unique_attr_values = set(attr_values)
+        unique_attr_values = sorted(set(attr_values))
 
         # unique_counts = {u:0 for u in unique_attr_values}
         tp_unique = {u:0 for u in unique_attr_values}
@@ -172,7 +182,14 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             f1 = f1*((tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])/len(y_true))
             f1s.append(f1)
 
-    return accuracies, precisions, recalls, f1s
+            # save TPR score values
+            div = (tp_unique[av] + fn_unique[av])
+            tpr = 0 if div==0 else tp_unique[av]/div
+            tprs.append(tpr)
+
+        disparities += tpr_disparity(tprs)
+
+    return accuracies, precisions, recalls, f1s, tprs, disparities
 
 
 def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_channels):
@@ -268,6 +285,8 @@ def test_chestxray():
     attr_precs = []
     attr_rcs = []
     attr_f1s = []
+    attr_tprs = []
+    tpr_disparities = []
     overall_accs = []
     overall_f1s = []
     
@@ -291,12 +310,13 @@ def test_chestxray():
         _plot_roc_curve(y_true, y_score, model)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
-        attr_acc, attr_pr, attr_rc, attr_f1 = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        attr_acc, attr_pr, attr_rc, attr_f1, attr_tpr, attr_disparities = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
         attr_accs.append(attr_acc)
         attr_precs.append(attr_pr)
         attr_rcs.append(attr_rc)
         attr_f1s.append(attr_f1)
-
+        attr_tprs.append(attr_tpr)
+        tpr_disparities.append(attr_disparities)
 
     plot_metrics_comparison(models, accs, 'CHESTXRAYaccuracy')
     plot_metrics_comparison(models, f1s, 'CHESTXRAYf1-score')
@@ -309,6 +329,8 @@ def test_chestxray():
     plot_metric_subgroup(subgroup_names, attr_precs, "Precision", models)
     plot_metric_subgroup(subgroup_names, attr_rcs, "Recall", models)
     plot_metric_subgroup(subgroup_names, attr_f1s, "F1-score", models)
+    plot_metric_subgroup(subgroup_names, attr_tprs, "TPR", models)
+    plot_metric_subgroup(subgroup_names, attr_disparities, "TPR disparity", models)
     
     worst_base = min(attr_accs[0])
     for idx in range(len(models))[1:]:
