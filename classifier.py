@@ -161,6 +161,9 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
             count_non_improv += 1
             if count_non_improv >= 5:
                 break
+        else:
+            count_non_improv = 0
+            
         torch.save(model.state_dict(), save_path)
         acc_pred = acc
 
