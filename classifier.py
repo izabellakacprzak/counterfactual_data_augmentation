@@ -141,7 +141,7 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
     print('[Test loop]\tF1 score: ' + str(f1))
     print('[Test loop]\tTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset), acc))
-    return y_pred, y_true, y_score, attr_true, acc, f1
+    return y_pred, y_true, y_score, attr_true, acc, f1, test_loss
 
 def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, save_path, do_dro=False, debiasing_method=DebiasingMethod.NONE):
     optimiser = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
@@ -149,18 +149,21 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
     accs = []
     f1s = []
 
-    _, _, _, _, acc_pred, f1 = test_classifier(model, valid_loader, loss_fn, do_dro)
+    _, _, _, _, acc_pred, f1, test_loss_prev = test_classifier(model, valid_loader, loss_fn, do_dro)
     accs.append(acc_pred)
     f1s.append(f1)
+    count_non_improv = 0
     for epoch in range(1, EPOCHS):
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro, debiasing_method)
         scheduler.step()
-        _, _, _, _, acc, f1 = test_classifier(model, valid_loader, loss_fn, do_dro)
-        if (acc_pred-acc) > 0.5:
-            break
+        _, _, _, _, acc, f1, test_loss = test_classifier(model, valid_loader, loss_fn, do_dro)
+        if test_loss_prev < test_loss:
+            count_non_improv += 1
+            if count_non_improv >= 5:
+                break
         torch.save(model.state_dict(), save_path)
         acc_pred = acc
 
-    y_pred, y_true, _, _, _, _ = test_classifier(model, test_loader, loss_fn, do_dro)
+    y_pred, y_true, _, _, _, _, _ = test_classifier(model, test_loader, loss_fn, do_dro)
 
     return accs, f1s, y_pred, y_true

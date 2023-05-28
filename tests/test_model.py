@@ -169,6 +169,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             # save f1 score values
             div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
             f1 = 0 if div==0 else tp_unique[av]/div
+            f1 = f1*((tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])/len(y_true))
             f1s.append(f1)
 
     return accuracies, precisions, recalls, f1s
@@ -185,7 +186,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         
     test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    y_pred, y_true, y_score, metrics_true, acc, f1 = test_classifier(model, test_loader, loss_fn)
+    y_pred, y_true, y_score, metrics_true, acc, f1, _ = test_classifier(model, test_loader, loss_fn)
 
     return metrics_true, y_true, y_pred, y_score
 

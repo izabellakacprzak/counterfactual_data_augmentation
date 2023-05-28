@@ -2,8 +2,8 @@ import torch
 
 GPU = "cuda:1"
 
-LEARNING_RATE = 0.00005
-EPOCHS = 15
+LEARNING_RATE = 0.0001
+EPOCHS = 20
 LAMBDA = 1.0
 BATCH_SIZE = 32
 MSE = torch.nn.MSELoss()
