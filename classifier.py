@@ -138,7 +138,7 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
     test_loss /= len(test_loader.dataset)
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)
-    attr_true = np.asarray(attr_true)
+    #attr_true = np.asarray(attr_true)
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
     print('[Test loop]\tF1 score: ' + str(f1))

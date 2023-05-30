@@ -48,7 +48,7 @@ def plot_metric_subgroup(subgroup_names, subgroup_metrics, metric_name, run_name
 
     _, ax = plt.subplots()
 
-    ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green'])
+    ax.set_prop_cycle(color=['red', 'blue', 'orange', 'gray', 'green', 'pink', 'purple'])
     for idx, run in enumerate(run_names):
         values = [m for m in subgroup_metrics[idx]]
         _ = ax.bar(np.arange(num_subgroups)+(width/len(run_names)*idx), values, width/(len(run_names)), label=run)
@@ -141,8 +141,6 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             attr_values = processed
         
         unique_attr_values = sorted(set(attr_values))
-        print(attribute)
-        print(unique_attr_values)
         # unique_counts = {u:0 for u in unique_attr_values}
         tp_unique = {u:0 for u in unique_attr_values}
         tn_unique = {u:0 for u in unique_attr_values}
@@ -274,12 +272,12 @@ def test_perturbed_mnist():
 def test_chestxray():
     #models = ["resBASELINE"]
     #models = ["BASELINE", "OVERSAMPLING_age0", "AUGMENTATIONS_age0"]
-    models = ["BASELINE", "OVERSAMPLING_positive", "AUGMENTATIONS_positive", "MIXUP_positive", "GROUP_DRO_label", "COUNTERFACTUALS_positive", "COUNTERFACTUALS_DRO_positive"]
+    models = ["BASELINE", "OVERSAMPLING_age4", "AUGMENTATIONS_age4", "MIXUP_age4", "GROUP_DRO_age", "COUNTERFACTUALS_age4", "COUNTERFACTUALS_DRO_age4"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
     loss_fn = torch.nn.CrossEntropyLoss()
-    subgroup_names = ['Female', 'Male', '0-19', '20-39', '40-59', '60-79', '80-99', 'Asian', 'Black', 'White']
+    subgroup_names = ['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black']
     
     accs = []
     f1s = []

@@ -72,10 +72,14 @@ class ChestXRay(datasets.VisionDataset):
         #finding = 0 if disease.sum() == 0 else 1
         
         # only consider patients with Pleural Effusion and healthy patients
-        if (disease.sum() >= 1 and self.data.loc[idx, 'Pleural Effusion'] == 0):
+        if disease.sum() == 0:
+            finding = 0
+        elif self.data.loc[idx, 'Pleural Effusion'] == 1:
+            finding = 1
+        else:
             continue
         # finding Pleural Effusion
-        finding = 1 if self.data.loc[idx, 'Pleural Effusion'] == 1 else 0
+        #finding = 1 if self.data.loc[idx, 'Pleural Effusion'] == 1 else 0
         
         #if finding:
         #    positive = positive+1
@@ -94,7 +98,7 @@ class ChestXRay(datasets.VisionDataset):
  
         # groups for group DRO loss
         age = (age//20)%5
-        group_idx = finding
+        group_idx = race
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     #print(positive)

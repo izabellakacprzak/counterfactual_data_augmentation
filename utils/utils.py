@@ -101,7 +101,7 @@ def _batch_generate_cfs(train_data, amount):
         s_indices = indices[idx:]
         sampler = SubsetRandomSampler(s_indices)
         loader = DataLoader(train_data, batch_size=1, sampler=sampler)
-        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_f=1)
+        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_r=2)
         if len(cf_data_new) != 0:
             cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
             cf_metrics += cf_metrics_new
@@ -132,11 +132,12 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 45000)
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 17000)
             print(type(cf_data))
         else:
             cf_data = np.load(CF_CHEST_DATA)
             cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
+        count = 0
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]
             samples['age'].append(metrics['age'])
@@ -145,16 +146,18 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             samples['x'].append(img)
             samples['race'].append(metrics['race'])
             samples['augmented'].append(1)
-
+            
+            count += 1
+            
         return samples
-
-    # TODO: TEST!!!
+    
+    count = 0
     for idx in range(len(train_data)):
         # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
         a = preprocess_age(ms['age'].item())
-        if lab == 1:
-            for _ in range(1):
+        if ms['race'].item() == 2:
+            for _ in range(4):
                 # TODO: make sure these are copied not referenced
                 samples['age'].append(ms['age'])
                 samples['sex'].append(ms['sex'])
@@ -163,7 +166,11 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
                 new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
                 samples['x'].append(new_x)
                 samples['augmented'].append(1)
-
+                
+                count = count + 1
+                if count >= 17650:
+                    print("return because reached limit")
+                    return samples
     return samples
 
 def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):

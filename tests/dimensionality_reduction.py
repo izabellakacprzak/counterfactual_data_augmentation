@@ -121,10 +121,10 @@ def visualise_perturbed_mnist():
         visualise_embeddings(mnist_model_path, test_dataset, 1, 10, 28)
 
 def visualise_chestxray():
-    models = ["BASELINE", "GROUP_DRO_age", "OVERSAMPLING_age_0", "AUGMENTATIONS_age_0", "COUNTERFACTUALS_age_0", "COUNTERFACTUALS_DRO_age_0"]
+    models = ["BASELINE", "OVERSAMPLING_positive", "AUGMENTATIONS_positive", "MIXUP_positive", "GROUP_DRO_label", "COUNTERFACTUALS_positive", "COUNTERFACTUALS_DRO_positive"]
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     #test_dataset = ChestXRay(mode="test", transform=transforms_list)
-    train_dataset = ChestXRay(mode="train", transform=transforms_list, method=DebiasingMethod.COUNTERFACTUALS)
+    train_dataset = ChestXRay(mode="test", transform=transforms_list, method=DebiasingMethod.COUNTERFACTUALS)
 
     for model in models:
         chestxray_model_path = model + "_CHESTXRAY"

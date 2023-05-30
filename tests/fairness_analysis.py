@@ -49,7 +49,7 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                     if "MNIST" in run_name:
                         perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
                     else:
-                        do_a, do_f, do_r, do_s = None, 1, None, None
+                        do_a, do_f, do_r, do_s = 1, None, None, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
                         cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
                         if len(cf) != 0:
@@ -130,7 +130,7 @@ def visualise_perturbed_mnist():
         fairness_analysis(mnist_model_path, originals, perturbed, 1, 10, 0)
 
 def visualise_chestxray():
-    models = ["BASELINE"]
+    models = ["BASELINE", "OVERSAMPLING_positive", "AUGMENTATIONS_positive", "GROUP_DRO_label", "COUNTERFACTUALS_positive", "COUNTERFACTUALS_DRO_positive"]
     #models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
     model_type = "_CHESTXRAY"
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
