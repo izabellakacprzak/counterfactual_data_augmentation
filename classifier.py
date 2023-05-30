@@ -116,7 +116,7 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
     y_true = []
     y_pred = []
     y_score = []
-    attr_true = []
+    attr_true = {}
     with torch.no_grad():
         for data, metrics, target in test_loader:
             data = data.to(device)
@@ -130,8 +130,11 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
 
             y_true += target.tolist()
             y_pred += pred.cpu().numpy().tolist()
-            metrics = list(map(lambda x: x.tolist(), list(metrics.values())))
-            attr_true = metrics if len(attr_true)==0 else [m+n for m,n in zip(attr_true, metrics)]
+            # metrics = [metrics[k].tolist() for k in sorted(metrics.keys())]
+            # list(map(lambda x: x.tolist(), list(metrics.values())))
+            for k in metrics.keys():
+                attr_true[k] = (attr_true[k] if k in attr_true else []) + metrics[k].tolist()
+            # attr_true = metrics if len(attr_true)==0 else [m+n for m,n in zip(attr_true, metrics)]
     test_loss /= len(test_loader.dataset)
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)

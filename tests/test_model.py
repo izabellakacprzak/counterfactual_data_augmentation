@@ -133,7 +133,7 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
         if attribute in ['thickness']:
             continue
 
-        attr_values = metrics_true[idx]
+        attr_values = metrics_true[attribute]
         if attribute == 'age':
             processed = []
             for m in attr_values:
