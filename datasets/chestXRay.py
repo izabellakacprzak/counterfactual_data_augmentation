@@ -98,7 +98,7 @@ class ChestXRay(datasets.VisionDataset):
  
         # groups for group DRO loss
         age = (age//20)%5
-        group_idx = race
+        group_idx = age
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     #print(positive)

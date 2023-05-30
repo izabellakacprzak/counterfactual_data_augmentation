@@ -27,7 +27,7 @@ class DebiasingMethod(Enum):
 
 class Augmentation(Enum):
     ROTATION = 1
-#     FLIP_LEFT_RIGHT = 2
+    FLIP_LEFT_RIGHT = 2
 #     FLIP_TOP_BOTTOM = 3
     BLUR = 4
     SALT_AND_PEPPER_NOISE = 5
@@ -70,8 +70,8 @@ def apply_debiasing_method(method, img):
         if augmentation == Augmentation.ROTATION:
             angle = random.randrange(-30, 30)
             img = np.array(Image.fromarray(img).rotate(angle))
-        # elif augmentation == Augmentation.FLIP_LEFT_RIGHT:
-        #     img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+        elif augmentation == Augmentation.FLIP_LEFT_RIGHT:
+            img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
         # elif augmentation == Augmentation.FLIP_TOP_BOTTOM:
         #     img = img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
         if augmentation == Augmentation.BLUR:
@@ -151,13 +151,12 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             
         return samples
     
-    count = 0
     for idx in range(len(train_data)):
         # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
         a = preprocess_age(ms['age'].item())
         if ms['race'].item() == 2:
-            for _ in range(4):
+            for _ in range(3):
                 # TODO: make sure these are copied not referenced
                 samples['age'].append(ms['age'])
                 samples['sex'].append(ms['sex'])
@@ -166,11 +165,16 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
                 new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
                 samples['x'].append(new_x)
                 samples['augmented'].append(1)
-                
-                count = count + 1
-                if count >= 17650:
-                    print("return because reached limit")
-                    return samples
+        elif ms['race'].item() == 1:
+            for _ in range(18):
+                # TODO: make sure these are copied not referenced
+                samples['age'].append(ms['age'])
+                samples['sex'].append(ms['sex'])
+                samples['race'].append(ms['race'])
+                samples['finding'].append(lab)
+                new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
+                samples['x'].append(new_x)
+                samples['augmented'].append(1)
     return samples
 
 def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):

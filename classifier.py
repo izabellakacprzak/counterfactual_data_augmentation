@@ -31,7 +31,9 @@ def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
     cfs = []
     obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
-    do_a, do_f, do_r, do_s = None, None, 2, None
+    
+    do_a = random.choice([0,1,2,3,4].remove(metrics['age'].item()))
+    do_a, do_f, do_r, do_s = None, None, do_a, None
     if do_a != None:
         do_a = random.randint(do_a*20, do_a*20+19)
     x_cf = generate_cf(obs, do_a, do_f, do_r, do_s)
