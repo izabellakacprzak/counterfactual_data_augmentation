@@ -6,6 +6,7 @@ from sklearn import metrics
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import roc_auc_score, roc_curve
+from statistics import median
 
 import sys
 sys.path.append("..")
@@ -19,10 +20,10 @@ from utils.utils import preprocess_age
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
 
 def tpr_disparity(tprs):
-    tpr_mean = sum(tprs)/len(tprs)
+    tpr_median = median(tprs)
     disparities = []
     for tpr in tprs:
-        disparities.append(tpr-(tpr_mean-tpr))
+        disparities.append(tpr-tpr_median)
 
     return disparities
 
@@ -56,7 +57,7 @@ def plot_metric_subgroup(subgroup_names, subgroup_metrics, metric_name, run_name
     ax.set_ylabel(metric_name)
     plt.xticks(rotation=45, ha='right')
     ax.set_xticks(np.arange(num_subgroups) + width)
-    ax.set_xticklabels(['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black'])
+    ax.set_xticklabels(subgroup_names)
 
     # Create a horizontal line at the origin
     ax.legend()
@@ -140,7 +141,8 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             attr_values = processed
         
         unique_attr_values = sorted(set(attr_values))
-
+        print(attribute)
+        print(unique_attr_values)
         # unique_counts = {u:0 for u in unique_attr_values}
         tp_unique = {u:0 for u in unique_attr_values}
         tn_unique = {u:0 for u in unique_attr_values}
@@ -159,7 +161,8 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
                     fn_unique[attr_values[idx]] = fn_unique[attr_values[idx]] + 1
                 else:
                     fp_unique[attr_values[idx]] = fp_unique[attr_values[idx]] + 1
-
+        
+        attr_tprs = []
         for av in unique_attr_values:
             # save accuracy value
             div = (tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])
@@ -186,8 +189,9 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             div = (tp_unique[av] + fn_unique[av])
             tpr = 0 if div==0 else tp_unique[av]/div
             tprs.append(tpr)
+            attr_tprs.append(tpr)
 
-        disparities += tpr_disparity(tprs)
+        disparities += tpr_disparity(attr_tprs)
 
     return accuracies, precisions, recalls, f1s, tprs, disparities
 
@@ -268,14 +272,14 @@ def test_perturbed_mnist():
     plot_metrics_comparison(models, recalls, 'MNISTrecall')
 
 def test_chestxray():
-    models = ["BASELINE"]
+    #models = ["resBASELINE"]
     #models = ["BASELINE", "OVERSAMPLING_age0", "AUGMENTATIONS_age0"]
-    #models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
+    models = ["BASELINE", "OVERSAMPLING_positive", "AUGMENTATIONS_positive", "MIXUP_positive", "GROUP_DRO_label", "COUNTERFACTUALS_positive", "COUNTERFACTUALS_DRO_positive"]
     in_channels = 1
     num_classes = 2
     attributes = ['sex', 'age', 'race']
     loss_fn = torch.nn.CrossEntropyLoss()
-    subgroup_names = ['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black']
+    subgroup_names = ['Female', 'Male', '0-19', '20-39', '40-59', '60-79', '80-99', 'Asian', 'Black', 'White']
     
     accs = []
     f1s = []
@@ -286,7 +290,7 @@ def test_chestxray():
     attr_rcs = []
     attr_f1s = []
     attr_tprs = []
-    tpr_disparities = []
+    attr_disparities = []
     overall_accs = []
     overall_f1s = []
     
@@ -310,13 +314,13 @@ def test_chestxray():
         _plot_roc_curve(y_true, y_score, model)
 
         ## Print performance metrics per attribute (eg. sex, digit etc) ##
-        attr_acc, attr_pr, attr_rc, attr_f1, attr_tpr, attr_disparities = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
+        attr_acc, attr_pr, attr_rc, attr_f1, attr_tpr, attr_disparity = metrics_per_attribute(attributes, metrics_true, y_true, y_pred)
         attr_accs.append(attr_acc)
         attr_precs.append(attr_pr)
         attr_rcs.append(attr_rc)
         attr_f1s.append(attr_f1)
         attr_tprs.append(attr_tpr)
-        tpr_disparities.append(attr_disparities)
+        attr_disparities.append(attr_disparity)
 
     plot_metrics_comparison(models, accs, 'CHESTXRAYaccuracy')
     plot_metrics_comparison(models, f1s, 'CHESTXRAYf1-score')
