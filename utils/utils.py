@@ -10,10 +10,11 @@ import torchvision
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
+import torch.nn.functional as F
+from tqdm import tqdm
 
 from .params import *
 from enum import Enum
-from .perturbations import perturbations, perturb_image
  
 class DebiasingMethod(Enum):
     NONE = 1
@@ -27,7 +28,7 @@ class DebiasingMethod(Enum):
 
 class Augmentation(Enum):
     ROTATION = 1
-    FLIP_LEFT_RIGHT = 2
+    # FLIP_LEFT_RIGHT = 2
 #     FLIP_TOP_BOTTOM = 3
     BLUR = 4
     SALT_AND_PEPPER_NOISE = 5
@@ -45,7 +46,10 @@ def _add_noise(image, noise_type="gauss"):
         noisy = image + gauss
         return noisy
     elif noise_type == "s&p":
-        row,col= image.shape
+        if len(image.shape)==2:
+            row,col= image.shape
+        else:
+            _,row,col= image.shape
         s_vs_p = 0.5
         amount = 0.004
         out = np.copy(image)
@@ -70,8 +74,8 @@ def apply_debiasing_method(method, img):
         if augmentation == Augmentation.ROTATION:
             angle = random.randrange(-30, 30)
             img = np.array(Image.fromarray(img).rotate(angle))
-        elif augmentation == Augmentation.FLIP_LEFT_RIGHT:
-            img = img.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT)
+        # elif augmentation == Augmentation.FLIP_LEFT_RIGHT:
+            # img = img.transpose(Image.FLIP_LEFT_RIGHT)
         # elif augmentation == Augmentation.FLIP_TOP_BOTTOM:
         #     img = img.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
         if augmentation == Augmentation.BLUR:
@@ -81,8 +85,8 @@ def apply_debiasing_method(method, img):
             img = _add_noise(img, "s&p")
         return img
     else:
-        perturbation = random.choice(perturbations)
-        img = perturb_image(img, perturbation)
+        # perturbation = random.choice(perturbations)
+        # img = perturb_image(img, perturbation)
         return img
 
 def _batch_generate_cfs(train_data, amount):
@@ -101,7 +105,9 @@ def _batch_generate_cfs(train_data, amount):
         s_indices = indices[idx:]
         sampler = SubsetRandomSampler(s_indices)
         loader = DataLoader(train_data, batch_size=1, sampler=sampler)
-        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_r=2)
+        do_a = 4
+        do_f = 0
+        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_a=do_a, do_f=do_f)
         if len(cf_data_new) != 0:
             cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
             cf_metrics += cf_metrics_new
@@ -132,8 +138,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 17000)
-            print(type(cf_data))
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 2700)
         else:
             cf_data = np.load(CF_CHEST_DATA)
             cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
@@ -151,33 +156,35 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             
         return samples
     
+    count = 0
     for idx in range(len(train_data)):
         # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
         a = preprocess_age(ms['age'].item())
-        if ms['race'].item() == 2:
-            for _ in range(3):
-                # TODO: make sure these are copied not referenced
-                samples['age'].append(ms['age'])
-                samples['sex'].append(ms['sex'])
-                samples['race'].append(ms['race'])
-                samples['finding'].append(lab)
-                new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
-                samples['x'].append(new_x)
-                samples['augmented'].append(1)
-        elif ms['race'].item() == 1:
-            for _ in range(18):
-                # TODO: make sure these are copied not referenced
-                samples['age'].append(ms['age'])
-                samples['sex'].append(ms['sex'])
-                samples['race'].append(ms['race'])
-                samples['finding'].append(lab)
-                new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
-                samples['x'].append(new_x)
-                samples['augmented'].append(1)
+        # if ms['race'].item() == 1:
+        for _ in range(2):
+            # TODO: make sure these are copied not referenced
+            samples['age'].append(ms['age'])
+            samples['sex'].append(ms['sex'])
+            samples['race'].append(ms['race'])
+            samples['finding'].append(lab)
+            new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
+            samples['x'].append(new_x)
+            samples['augmented'].append(1)
+            count += 1
+        # elif ms['race'].item() == 2:
+        #     for _ in range(3):
+        #         # TODO: make sure these are copied not referenced
+        #         samples['age'].append(ms['age'])
+        #         samples['sex'].append(ms['sex'])
+        #         samples['race'].append(ms['race'])
+        #         samples['finding'].append(lab)
+        #         new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
+        #         samples['x'].append(new_x)
+        #         samples['augmented'].append(1)
     return samples
 
-def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
+def debias_perturbed_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
     if (method == DebiasingMethod.PERTURBATIONS and os.path.exists("data/mnist_debiased_perturbed.pt") and
         os.path.exists("data/mnist_debiased_perturbed_metrics.csv")):
         return torch.load("data/mnist_debiased_perturbed.pt"), pd.read_csv("data/mnist_debiased_perturbed_metrics.csv", index_col='index')
@@ -193,7 +200,8 @@ def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING)
     new_metrics = []
     for idx, (img, label) in enumerate(train_data):
         metrics = train_metrics[idx]
-        if (not metrics['bias_aligned']) and (label in THICK_CLASSES or label in THIN_CLASSES):
+        # if (not metrics['bias_aligned']) and (label in THICK_CLASSES or label in THIN_CLASSES):
+        if label in THICK_CLASSES or label in THIN_CLASSES:
             for _ in range(10):
                 new_data.append((apply_debiasing_method(method, img), label))
                 new_m = metrics.copy()
@@ -202,6 +210,55 @@ def debias_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING)
 
     if method == DebiasingMethod.PERTURBATIONS:
         torch.save(train_data + new_data, "data/mnist_debiased_perturbed.pt")
+
+    return train_data + new_data, train_metrics + new_metrics
+
+def _generate_colored_cfs(train_data, train_metrics):
+    from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
+    # cf_data = np.array([], dtype=np.float32).reshape(0, 3, 28, 28)
+    cf_data = []
+    cf_metrics = []
+
+    for idx, (img, label) in enumerate(tqdm(train_data)):
+        metrics = train_metrics[idx]
+        if metrics['bias_aligned'] == False:
+            for _ in range(10):
+                img_p = torchvision.transforms.ToTensor()(img)
+                img_p = img_p.float() * 255.0
+                img_p = torchvision.transforms.Pad(padding=2)(img_p).type(torch.ByteTensor)
+                obs = {
+                    'x': img_p,
+                    'color': F.one_hot(torch.tensor(metrics['color']).long(), num_classes=10),
+                    'digit': F.one_hot(torch.tensor(label).long(), num_classes=10)}
+        
+                colors = list(range(10))
+                colors.remove(label)
+                img_cf, metrics_cf, label_cf = generate_colored_counterfactual(obs=obs, color=random.choice(colors))
+                cf_data.append((img_cf, label_cf))
+                cf_metrics.append(metrics_cf)
+
+    return cf_data, cf_metrics
+
+def debias_colored_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
+    if method == DebiasingMethod.COUNTERFACTUALS:
+        if not os.path.exists(COUNTERFACTUALS_COLORED_DATA) or not os.path.exists(COUNTERFACTUALS_COLORED_METRICS):
+            cfs, cf_metrics = _generate_colored_cfs(train_data, train_metrics)
+        else:
+            cfs = torch.load(COUNTERFACTUALS_COLORED_DATA)
+            cf_metrics = pd.read_csv(COUNTERFACTUALS_COLORED_METRICS, index_col=None).to_dict('records')
+
+        return train_data + cfs, train_metrics + cf_metrics
+
+    new_data = []
+    new_metrics = []
+    for idx, (img, label) in enumerate(train_data):
+        metrics = train_metrics[idx]
+        if metrics['bias_aligned'] == False:
+            for _ in range(10):
+                new_data.append((apply_debiasing_method(method, img), label))
+                new_m = metrics.copy()
+                new_m['bias_aligned'] = False
+                new_metrics.append(new_m)
 
     return train_data + new_data, train_metrics + new_metrics
 
@@ -234,3 +291,17 @@ def preprocess_age(age):
         return 3
     else:
         return 4
+    
+def preprocess_thickness(thickness):
+    if thickness <= 1.5:
+        return 0
+    else:
+        return 1
+
+def save_to_csv(file_name, col_names, rows):
+    with open(file_name, 'w') as f:   
+        # using csv.writer method from CSV package
+        write = csv.writer(f)
+        
+        write.writerow(col_names)
+        write.writerows(rows)

@@ -27,13 +27,42 @@ def mnist_regularisation(model, x, metrics, labels, logits):
     logits_cf = model(cfs)
     return LAMBDA * MSE(logits, logits_cf)
 
+def colored_mnist_regularisation(model, x, metrics, labels, logits):
+    from PIL import Image
+    from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
+    cfs = []
+    for i in range(len(x)):
+        img = x[i].float().cpu() * 255.0
+        img = TF.Pad(padding=2)(img).type(torch.ByteTensor)
+        obs = {
+            'x': img,
+            'color': F.one_hot(torch.tensor(metrics['color'][i]).long(), num_classes=10),
+            'digit': F.one_hot(torch.tensor(labels[i]).long().cpu(), num_classes=10)}
+        
+        x_cf, _, _ = generate_colored_counterfactual(obs=obs, color=random.randint(0,9))
+        x_cf = np.transpose(x_cf, (2, 0, 1))
+        cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
+    
+    cfs = torch.stack(cfs).squeeze(1)
+    logits_cf = model(cfs)
+    return LAMBDA * MSE(logits, logits_cf)
+
 def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
     cfs = []
-    obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
+    # obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
+    obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':metrics['finding']}
     
-    do_a = random.choice([0,1,2,3,4].remove(metrics['age'].item()))
-    do_a, do_f, do_r, do_s = None, None, do_a, None
+    do_a, do_f, do_r, do_s = None, None, None, None
+    # do_a = random.choice([0,1, 4])
+    # do_r = random.choice([1,2])
+    if random.choice([0,1])==0:
+        do_a = random.choice([0,1])
+        do_f = 1
+    else:
+        do_a = 4
+        do_f = 0
+
     if do_a != None:
         do_a = random.randint(do_a*20, do_a*20+19)
     x_cf = generate_cf(obs, do_a, do_f, do_r, do_s)
@@ -80,7 +109,8 @@ class ConvNet(torch.nn.Module):
         return self.model(x)
     
     def regularisation(self, data, metrics, target, logits):
-        return mnist_regularisation(self, data, metrics, target, logits)
+        # return mnist_regularisation(self, data, metrics, target, logits)
+        return colored_mnist_regularisation(self, data, metrics, target, logits)
 
 def _get_loss(logits, target, loss_fn, do_dro=False, group_idxs=None):
     if do_dro:
@@ -155,16 +185,16 @@ def train_and_evaluate(model, train_loader, valid_loader, test_loader, loss_fn, 
     f1s = []
 
     _, _, _, _, acc_pred, f1, test_loss_prev = test_classifier(model, valid_loader, loss_fn, do_dro)
-    accs.append(acc_pred)
-    f1s.append(f1)
     count_non_improv = 0
     for epoch in range(1, EPOCHS):
         run_epoch(model, optimiser, loss_fn, train_loader, epoch, do_dro, debiasing_method)
         scheduler.step()
         _, _, _, _, acc, f1, test_loss = test_classifier(model, valid_loader, loss_fn, do_dro)
-        if test_loss_prev < test_loss:
+        accs.append(acc.item())
+        f1s.append(f1.item())
+        if acc_pred > acc:
             count_non_improv += 1
-            if count_non_improv >= 5:
+            if count_non_improv >= 1:
                 break
         else:
             count_non_improv = 0

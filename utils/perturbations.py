@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import tqdm
 from utils.params import *
+from utils.utils import save_to_csv
 
 from morphomnist import morpho, perturb, measure
 
@@ -42,10 +43,10 @@ def add_perturbations(images, targets, digits, perturbations=perturbations):
 
 # bias: [0, 7, 8] mostly thin, [1, 3, 6, 9] mostly thick, [2, 4, 5] equally spread
 def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0.05):
-    train_file_name = "data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt"
-    test_file_name = "data/test_perturbed.pt"
-    metrics_train_file_name = "data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv"
-    metrics_test_file_name = "data/test_perturbed_mnist_metrics.csv"
+    train_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt"
+    test_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed.pt"
+    metrics_train_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv"
+    metrics_test_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed_mnist_metrics.csv"
 
     if os.path.exists(train_file_name) and os.path.exists(test_file_name):
         # os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
@@ -149,11 +150,3 @@ def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0
     save_to_csv(metrics_test_file_name, col_names, test_metrics)
 
     return group_counts
-
-def save_to_csv(file_name, col_names, rows):
-    with open(file_name, 'w') as f:   
-        # using csv.writer method from CSV package
-        write = csv.writer(f)
-        
-        write.writerow(col_names)
-        write.writerows(rows)

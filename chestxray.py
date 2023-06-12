@@ -17,7 +17,7 @@ accs_arr = []
 f1s_arr = []
 
 in_channels = 1
-out_channels = 2
+out_channels = 3
 
 transforms_list = transforms.Compose([transforms.Resize((192,192)),])
 
@@ -59,14 +59,14 @@ def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=Fals
 # biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-#train_chestxray(run_name="BASELINE_CHESTXRAY")
-#train_chestxray(run_name="OVERSAMPLING_black_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
-#train_chestxray(run_name="AUGMENTATIONS_black_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
-#train_chestxray(run_name="MIXUP_black_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
-#train_chestxray(run_name="GROUP_DRO_race_CHESTXRAY", do_dro=True)
-train_chestxray(run_name="COUNTERFACTUALS_black_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
-train_chestxray(run_name="COUNTERFACTUALS_DRO_black_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS, do_dro=True)
-train_chestxray(run_name="CFREGULARISATION_black_CHESTXRAY", debiasing_method=DebiasingMethod.CF_REGULARISATION)
+# train_chestxray(run_name="BASELINE_disease_pred_CHESTXRAY")
+# train_chestxray(run_name="OVERSAMPLING_race_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
+# train_chestxray(run_name="AUGMENTATION_raceS_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
+# train_chestxray(run_name="MIXUP_sex_pred_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
+# train_chestxray(run_name="GROUP_DRO_race_disease_pred_CHESTXRAY", do_dro=True)
+# train_chestxray(run_name="COUNTERFACTUALS_age_disease_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+# train_chestxray(run_name="COUNTERFACTUALS_race_MIXUP_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+train_chestxray(run_name="CFREGULARISATION_age_disease_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.CF_REGULARISATION)
 ############################################################
 
 for idx in range(len(runs_arr)):

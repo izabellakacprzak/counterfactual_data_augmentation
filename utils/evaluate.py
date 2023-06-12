@@ -56,7 +56,7 @@ def plot_dataset_digits(dataset):
   plt.show()  # finally, render the plot
 
 def save_plot_for_metric(metric_name, metric_arr, run_name):
-    x, y = np.array(list(range(EPOCHS))), metric_arr
+    x, y = np.array(list(range(len(metric_arr)))), metric_arr
     res = stats.linregress(x, y)
     plt.figure(figsize=(10,10))
     plt.plot(x, y, 'o', label='original data')
