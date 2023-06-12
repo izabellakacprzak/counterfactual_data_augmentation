@@ -30,7 +30,7 @@ class ChestXRay(datasets.VisionDataset):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
-    self.data = pd.read_csv(csv_file)
+    self.data = pd.read_csv(csv_file).head(1000)
 
     self.transform = transform
     self.labels = [
@@ -60,6 +60,7 @@ class ChestXRay(datasets.VisionDataset):
     }
 
     self.group_counts = {}
+    race_counts = {0:0, 1:0, 2:0}
     #positive = 0
     #negative = 0
     for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
@@ -86,11 +87,16 @@ class ChestXRay(datasets.VisionDataset):
         #else:
         #    negative = negative +1
 
+        race = self.data.loc[idx, 'race_label']
+        # if race_counts[race] >= 1179:
+        #    continue
+        # race_counts[race] = race_counts[race] + 1
+
+
         self.samples['x'].append(imread(img_path).astype(np.float32)[None, ...])
         self.samples['finding'].append(finding)
         age = self.data.loc[idx, 'age']
         self.samples['age'].append(age)
-        race = self.data.loc[idx, 'race_label']
         self.samples['race'].append(race)
         sex = self.data.loc[idx, 'sex_label']
         self.samples['sex'].append(sex)
@@ -98,7 +104,7 @@ class ChestXRay(datasets.VisionDataset):
  
         # groups for group DRO loss
         age = (age//20)%5
-        group_idx = age
+        group_idx = race
         self.group_counts[group_idx] = (0 if group_idx not in self.group_counts else self.group_counts[group_idx]) + 1
 
     #print(positive)
@@ -131,8 +137,9 @@ class ChestXRay(datasets.VisionDataset):
         sample['x'] = self.transform(sample['x'])
 
     metrics = {'sex':sample['sex'], 'age':sample['age'], 'race':sample['race'],
-               'augmented':sample['augmented'], 'group_idx':group_idx}
+               'augmented':sample['augmented'], 'group_idx':group_idx, 'finding':sample['finding']}
     return sample['x'], metrics, sample['finding']
+    # return sample['x'], metrics, metrics['race']
 
   def __len__(self):
     return len(self.samples['x'])

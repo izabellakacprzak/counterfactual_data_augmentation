@@ -17,16 +17,15 @@ class PerturbedMNIST(datasets.VisionDataset):
 
     self.group_counts = prepare_perturbed_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
     if train:
-      self.data = torch.load("data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt")
-      self.metrics = pd.read_csv("data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
-      
-      if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
-        self.data, self.metrics = debias_mnist(train_data=self.data, train_metrics=self.metrics, method=method)
-      
+      self.data = torch.load("/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt")
+      self.metrics = pd.read_csv("/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
     else:
-      self.data = torch.load("data/test_perturbed.pt")
-      self.metrics = pd.read_csv("data/test_perturbed_mnist_metrics.csv", index_col='index').to_dict('records')
-
+      self.data = torch.load("/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed.pt")
+      self.metrics = pd.read_csv("/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed_mnist_metrics.csv", index_col='index').to_dict('records')
+    
+    if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
+      self.data, self.metrics = debias_perturbed_mnist(train_data=self.data, train_metrics=self.metrics, method=method)
+      
   def __getitem__(self, index):
     img, target = self.data[index]
     metrics = {k: torch.tensor(float(self.metrics[index][k])) for k in ['thickness', 'intensity', 'bias_aligned']}
