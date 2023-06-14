@@ -4,36 +4,23 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 import torchvision.transforms as TF
 from tqdm import tqdm
-import numpy as np
 import os
+import numpy as np
+import torch.nn.functional as F
+import random
 
 import sys
 sys.path.append("..")
 
 from datasets.perturbedMNIST import PerturbedMNIST
+from datasets.coloredMNIST import ColoredMNIST
 from datasets.chestXRay import ChestXRay
 from classifier import ConvNet, DenseNet
 from utils.utils import apply_debiasing_method, DebiasingMethod
 from utils.params import *
+from utils.cf_utils import *
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
-
-def _get_cf_for_mnist(img, thickness, intensity, label):
-    from dscm.generate_counterfactuals import generate_counterfactual_for_x
-    img = img.float() * 254
-    img = TF.Pad(padding=2)(img).type(torch.ByteTensor).unsqueeze(0)
-    x_cf = generate_counterfactual_for_x(img, thickness, intensity, label)
-    return torch.from_numpy(x_cf).unsqueeze(0).float()
-
-def _get_cf_for_chestxray(img, metrics, label, do_a, do_f, do_r, do_s):
-    from dscmchest.generate_counterfactuals import generate_cf
-    obs = {'x': img,
-           'age': metrics['age'],
-           'race': metrics['race'],
-           'sex': metrics['sex'],
-           'finding': label}
-    cf = generate_cf(obs, do_a=do_a, do_f=do_f, do_r=do_r, do_s=do_s)
-    return cf
 
 def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
     originals = []
@@ -46,13 +33,19 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
         for _ in range(perturbs_per_sample):
             for i in range(len(data)):
                 if do_cfs:
-                    if "MNIST" in run_name:
-                        perturbed.append(_get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                    if "PERTURBED" in run_name:
+                        perturbed.append(get_cf_for_mnist(data[i][0], metrics['thickness'][i], metrics['intensity'][i], labels[i]))
+                        originals.append(data[i])
+                    elif "COLORED" in run_name:
+                        col = random.randint(0,9)
+                        img_cf = get_cf_for_colored_mnist(data[i], metrics['color'][i], labels[i], col)
+                        img_cf = torch.from_numpy(img_cf).float().to(device)
+                        perturbed.append(img_cf)
                         originals.append(data[i])
                     else:
-                        do_a, do_f, do_r, do_s = None, None, 2, None
+                        do_a, do_f, do_r, do_s = 0, 1, None, None
                         ms = {k:vs[i] for k,vs in metrics.items()}
-                        cf = _get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
+                        cf = get_cf_for_chestxray(data[i][0], ms, labels[i], do_a, do_f, do_r, do_s)
                         if len(cf) != 0:
                             perturbed.append(torch.tensor(cf).to(device))
                             originals.append(data[i])
@@ -87,8 +80,8 @@ def classifier_fairness_analysis(model, run_name, originals, perturbeds, fairnes
         prob = torch.nn.functional.softmax(logits, dim=1).tolist()
         perturbed_probs.append(prob[0][fairness_label])
 
-    original_data_file = "data/originals{}.txt".format(run_name)
-    perturbed_data_file = "data/cfs{}.txt".format(run_name)
+    original_data_file = "data/colored_mnist/originals{}.txt".format(run_name)
+    perturbed_data_file = "data/colored_mnist/cfs{}.txt".format(run_name)
     if os.path.exists(original_data_file):
         os.remove(original_data_file)    
     if os.path.exists(perturbed_data_file):
@@ -109,9 +102,12 @@ def classifier_fairness_analysis(model, run_name, originals, perturbeds, fairnes
     # plt.savefig("plots/fairness_{}.png".format(run_name))
 
 def fairness_analysis(model_path, originals, perturbed, in_channels, out_channels, fairness_label):
-    if "MNIST" in model_path:
+    if "PERTURBED" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
+    elif "COLORED" in model_path:
+        model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+        model.load_state_dict(torch.load("../checkpoints/colored_mnist/01/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/chestxray/classifier_{}.pt".format(model_path), map_location=device))
@@ -133,10 +129,26 @@ def visualise_perturbed_mnist():
         mnist_model_path = model + model_type
         fairness_analysis(mnist_model_path, originals, perturbed, 1, 10, 9)
 
+def visualise_colored_mnist():
+    models = [ "BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "GROUP_DRO", "COUNTERFACTUALS", "CFREGULARISATION"]
+    model_type = "_COLORED_MNIST"
+    transforms_list = transforms.Compose([transforms.ToTensor()])
+    test_dataset = ColoredMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=0.01)
+
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    do_cfs = True
+    originals, perturbed = _gen_cfs(test_loader, 1, do_cfs, model_type)
+
+    for model in models:
+        mnist_model_path = model + model_type
+        fairness_analysis(mnist_model_path, originals, perturbed, 3, 10, 9)
+
 def visualise_chestxray():
-    models = ["BASELINE", "OVERSAMPLING_race", "AUGMENTATIONS_race", "GROUP_DRO_race", "COUNTERFACTUALS_race", "COUNTERFACTUALS_race_MIXUP", "CFREGULARISATION_race"]
+    # models = ["BASELINE", "OVERSAMPLING_race", "AUGMENTATIONS_race", "GROUP_DRO_race", "COUNTERFACTUALS_race", "COUNTERFACTUALS_race_MIXUP", "CFREGULARISATION_race"]
+    models = ["BASELINE", "CFREGULARISATION_age_disease"]
     #models = ["BASELINE", "GROUP_DRO_race", "OVERSAMPLING_black", "AUGMENTATIONS_black", "MIXUP_black", "COUNTERFACTUALS_black", "COUNTERFACTUALS_DRO_black"]
-    model_type = "_disease_pred_CHESTXRAY"
+    # model_type = "_disease_pred_CHESTXRAY"
+    model_type = "_race_pred_CHESTXRAY"
     transforms_list = transforms.Compose([transforms.Resize((192,192)),])
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
@@ -149,4 +161,5 @@ def visualise_chestxray():
         fairness_analysis(chestxray_model_path, originals, perturbed, 1, 2, 0)
 
 # visualise_perturbed_mnist()
-visualise_chestxray()
+# visualise_chestxray()
+visualise_colored_mnist()

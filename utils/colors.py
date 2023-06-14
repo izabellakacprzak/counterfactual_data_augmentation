@@ -56,6 +56,9 @@ def prepare_colored_mnist(train_data, test_data, bias_conflicting_percentage=0.0
             train_set.append((np.uint8(colored_arr), label))
             train_metrics.append([idx, label, True])
 
+    print("bias aligned: {}".format(count_bias))
+    print("bias conflicting: {}".format(count_anti))
+    
     for idx, (im, label) in enumerate(test_data):
         if idx % 10000 == 0:
             print(f'Converting image {idx}/{len(test_data)}')

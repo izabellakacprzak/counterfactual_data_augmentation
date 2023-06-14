@@ -1,13 +1,14 @@
 import numpy as np
 import random
 import torch.nn as nn
-from torchvision.models import resnet152, ResNet152_Weights
+from torchvision.models import resnet18, ResNet18_Weights
 import torchvision.transforms as TF
 import torch.nn.functional as F
 import torchvision
 import torch.optim.lr_scheduler as lr_scheduler
 
 from utils.utils import mixup_data, DebiasingMethod
+from utils.cf_utils import *
 from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
@@ -32,15 +33,7 @@ def colored_mnist_regularisation(model, x, metrics, labels, logits):
     from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
     cfs = []
     for i in range(len(x)):
-        img = x[i].float().cpu() * 255.0
-        img = TF.Pad(padding=2)(img).type(torch.ByteTensor)
-        obs = {
-            'x': img,
-            'color': F.one_hot(torch.tensor(metrics['color'][i]).long(), num_classes=10),
-            'digit': F.one_hot(torch.tensor(labels[i]).long().cpu(), num_classes=10)}
-        
-        x_cf, _, _ = generate_colored_counterfactual(obs=obs, color=random.randint(0,9))
-        x_cf = np.transpose(x_cf, (2, 0, 1))
+        x_cf = get_cf_for_colored_mnist(x[i], metrics['color'][i], labels[i], random.randint(0,9))
         cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
     
     cfs = torch.stack(cfs).squeeze(1)
@@ -94,7 +87,7 @@ class DenseNet(torch.nn.Module):
 class ConvNet(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ConvNet, self).__init__()
-        self.model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V1)
+        self.model = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         # change the input size to number of channels
         self.model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=6, stride=2, padding=3, bias=False)
         # change the output size to number of classes

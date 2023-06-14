@@ -16,13 +16,13 @@ def bias_estimate(original_preds, augmented_preds):
     return (positive_change - negative_change) / (len(original_preds))
 
 
-titles = ["BASELINE", "OVERSAMPLING", "STANDARD AUGMENTATIONS", "MIXUP", "COUNTERFACTUAL AUGMENTATIONS", "CF REGULARISATION"]
-run_names = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+titles = ["BASELINE", "OVERSAMPLING", "STANDARD AUGMENTATIONS", "GROUP DRO", "COUNTERFACTUAL AUGMENTATIONS", "CF REGULARISATION"]
+run_names = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "GROUP_DRO", "COUNTERFACTUALS", "CFREGULARISATION"]
 for idx, run_name in enumerate(run_names):
     original_probs = []
     perturbed_probs = []
-    run_name = "{}_PERTURBED_MNIST".format(run_name)
-    with open('data/originals{}.txt'.format(run_name), 'r') as fp:
+    run_name = "{}_COLORED_MNIST".format(run_name)
+    with open('data/colored_mnist/originals{}.txt'.format(run_name), 'r') as fp:
         for item in fp:
             # items = item.split(', ')
             # prob = float(items[0][1:])
@@ -31,7 +31,7 @@ for idx, run_name in enumerate(run_names):
             # prob = round(prob, 5)
             # prob = precision_round(prob, 5)
             original_probs.append(prob)
-    with open('data/cfs{}.txt'.format(run_name), 'r') as fp:
+    with open('data/colored_mnist/cfs{}.txt'.format(run_name), 'r') as fp:
         for item in fp:
             # items = item.split(', ')
             # prob = float(items[0][1:])
@@ -54,4 +54,4 @@ for idx, run_name in enumerate(run_names):
     x = np.linspace(0, 1, 1000)
     plt.plot(x, x, linestyle=':', color='black')
     plt.tight_layout()
-    plt.savefig("plots/fairness/mnist/fairness_{}.png".format(run_name))
+    plt.savefig("plots/fairness/colored_mnist/fairness_{}.png".format(run_name))

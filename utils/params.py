@@ -2,7 +2,7 @@ import torch
 
 GPU = "cuda:0"
 
-LEARNING_RATE = 0.00007
+LEARNING_RATE = 0.001
 EPOCHS = 20
 LAMBDA = 0.6
 BATCH_SIZE = 32

@@ -175,7 +175,7 @@ def visualise_embeddings(model_path, dataset, in_channels, out_channels, img_dim
         visualise_t_sne(test_loader, model, img_dim, "{}/{}t_sne".format(save_dir, model_path), "mnist")
     elif "COLORED" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/colored_mnist/classifier_{}.pt".format(model_path), map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/colored_mnist/01/classifier_{}.pt".format(model_path), map_location=device))
         test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
         visualise_t_sne(test_loader, model, img_dim, "{}/{}t_sne".format(save_dir, model_path), "coloredmnist")
     else:
@@ -197,7 +197,7 @@ def visualise_perturbed_mnist():
 
 def visualise_colored_mnist():
     models = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS"]
-    save_dir = "plots/tsne/colored_mnist"
+    save_dir = "plots/tsne/colored_mnist/01"
 
     transforms_list = transforms.Compose([transforms.ToTensor()])
     test_dataset = ColoredMNIST(train=False, transform=transforms_list)
