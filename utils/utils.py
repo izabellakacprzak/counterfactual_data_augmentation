@@ -90,7 +90,7 @@ def apply_debiasing_method(method, img):
         return img
 
 def _batch_generate_cfs(train_data, amount):
-    from dscmchest.generate_counterfactuals import generate_cfs
+    from dscmchest.generate_counterfactuals import generate_cfs, generate_cfs_random
     cf_data = np.array([], dtype=np.float32).reshape(0, 1, 192, 192)
     cf_metrics = []
     idx = 0
@@ -105,9 +105,8 @@ def _batch_generate_cfs(train_data, amount):
         s_indices = indices[idx:]
         sampler = SubsetRandomSampler(s_indices)
         loader = DataLoader(train_data, batch_size=1, sampler=sampler)
-        do_a = 4
-        do_f = 0
-        cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_a=do_a, do_f=do_f)
+        cf_data_new, cf_metrics_new, last_idx = generate_cfs_random(loader, amount=a)
+        # cf_data_new, cf_metrics_new, last_idx = generate_cfs(loader, amount=a, do_a=do_a, do_f=do_f)
         if len(cf_data_new) != 0:
             cf_data = np.concatenate((cf_data, cf_data_new), axis=0)
             cf_metrics += cf_metrics_new
@@ -138,7 +137,7 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     if method == DebiasingMethod.COUNTERFACTUALS:
         if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
-            cf_data, cf_metrics = _batch_generate_cfs(train_data, 2700)
+            cf_data, cf_metrics = _batch_generate_cfs(train_data, 20000)
         else:
             cf_data = np.load(CF_CHEST_DATA)
             cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
@@ -221,8 +220,8 @@ def _generate_colored_cfs(train_data, train_metrics):
 
     for idx, (img, label) in enumerate(tqdm(train_data)):
         metrics = train_metrics[idx]
-        if metrics['bias_aligned'] == False:
-            for _ in range(10):
+        if metrics['bias_aligned'] == True:
+            for _ in range(1):
                 img_p = torchvision.transforms.ToTensor()(img)
                 img_p = img_p.float() * 255.0
                 img_p = torchvision.transforms.Pad(padding=2)(img_p).type(torch.ByteTensor)
@@ -232,8 +231,9 @@ def _generate_colored_cfs(train_data, train_metrics):
                     'digit': F.one_hot(torch.tensor(label).long(), num_classes=10)}
         
                 colors = list(range(10))
-                colors.remove(label)
-                img_cf, metrics_cf, label_cf = generate_colored_counterfactual(obs=obs, color=random.choice(colors))
+                colors.remove(metrics['color'])
+                # img_cf, metrics_cf, label_cf = generate_colored_counterfactual(obs=obs, do_c=random.choice(colors))
+                img_cf, metrics_cf, label_cf = generate_colored_counterfactual(obs=obs, do_c=random.choice(colors))
                 cf_data.append((img_cf, label_cf))
                 cf_metrics.append(metrics_cf)
 
@@ -241,20 +241,15 @@ def _generate_colored_cfs(train_data, train_metrics):
 
 def debias_colored_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
     if method == DebiasingMethod.COUNTERFACTUALS:
-        if not os.path.exists(COUNTERFACTUALS_COLORED_DATA) or not os.path.exists(COUNTERFACTUALS_COLORED_METRICS):
-            cfs, cf_metrics = _generate_colored_cfs(train_data, train_metrics)
-        else:
-            cfs = torch.load(COUNTERFACTUALS_COLORED_DATA)
-            cf_metrics = pd.read_csv(COUNTERFACTUALS_COLORED_METRICS, index_col=None).to_dict('records')
-
+        cfs, cf_metrics = _generate_colored_cfs(train_data, train_metrics)
         return train_data + cfs, train_metrics + cf_metrics
 
     new_data = []
     new_metrics = []
     for idx, (img, label) in enumerate(train_data):
         metrics = train_metrics[idx]
-        if metrics['bias_aligned'] == False:
-            for _ in range(10):
+        if metrics['bias_aligned'] == True:
+            for _ in range(1):
                 new_data.append((apply_debiasing_method(method, img), label))
                 new_m = metrics.copy()
                 new_m['bias_aligned'] = False

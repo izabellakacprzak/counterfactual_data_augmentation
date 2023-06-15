@@ -53,7 +53,7 @@ def plot_images():
         # ax.append(fig.add_subplot(rows, columns, i+1))
         # lab = "No finding" if label.item()==0 else "Pleural Effusion"
         # ax[-1].set_title(str(lab))
-        # img_cf, metrics_cf, _ = generate_colored_counterfactual(obs=obs, color=1)
+        # img_cf, metrics_cf, _ = generate_colored_counterfactual(obs=obs, do_c=1)
         # t = transforms.ToPILImage()
         # img = t(img_cf)
         # plt.axis('off')
@@ -104,11 +104,10 @@ def plot_morpho_counterfactuals():
     plt.savefig("cf_interventions_morpho_mnist.jpg")
 
 def plot_colored_counterfactuals():
-    from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
     cols = [0,1,2,3,4,5,6,7,8,9]
     transforms_list = transforms.Compose([transforms.ToTensor()])
     # dataset = ColoredMNIST(train=False, transform=transforms_list)
-    dataset = ColoredMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=0.01)
+    dataset = ColoredMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=0.0)
     w = 15
     h = 7
     fig = plt.figure(figsize=(w, h))
@@ -140,12 +139,9 @@ def plot_colored_counterfactuals():
         im = t(img)
         plt.axis('off')
         plt.imshow(im)
-
-        img = img.float() * 255.0
-        img = transforms.Pad(padding=2)(img).type(torch.ByteTensor)
         
         for j in range(1,columns):
-            img_cf = get_cf_for_colored_mnist(img, metrics['color'], label)
+            img_cf = get_cf_for_colored_mnist(img, metrics['color'], label, cols[j-1])
             plot_colored_cf(img_cf, i+j)
 
     plt.savefig("visualised_colored_mnist.jpg")
@@ -210,6 +206,6 @@ def plot_chest_counterfactuals():
     plt.savefig("cf_interventions_chestxray.jpg")
 
 # plot_images()
-# plot_colored_counterfactuals()
+plot_colored_counterfactuals()
 # plot_morpho_counterfactuals()
-plot_chest_counterfactuals()
+# plot_chest_counterfactuals()

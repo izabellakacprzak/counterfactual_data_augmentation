@@ -2,7 +2,7 @@ import torch
 
 GPU = "cuda:0"
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 EPOCHS = 20
 LAMBDA = 0.6
 BATCH_SIZE = 32
@@ -20,8 +20,8 @@ COUNTERFACTUALS_COLORED_DATA = "/homes/iek19/Documents/FYP/DSCMv2/dscm/data/gene
 COUNTERFACTUALS_COLORED_METRICS = "/homes/iek19/Documents/FYP/DSCMv2/dscm/data/generated_counterfactuals_colored_metrics.csv"
 # CF_CHEST_DATA = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_data_age_disease.npy"
 # CF_CHEST_METRICS = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_metrics_age_disease.csv"
-CF_CHEST_DATA = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_data_race.npy"
-CF_CHEST_METRICS = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_metrics_race.csv"
+CF_CHEST_DATA = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_data_random.npy"
+CF_CHEST_METRICS = "/vol/bitbucket/iek19/data/chestxray/generated_cfs_metrics_random.csv"
 
 THIN_CLASSES = [0, 7, 8]
 THICK_CLASSES = [1, 3, 6, 9]

@@ -37,7 +37,6 @@ def get_cf_for_colored_mnist(img, color, label, new_col):
         'digit': F.one_hot(torch.tensor(label).long().cpu(), num_classes=10)
         }
     
-    img_cf, _, _ = generate_colored_counterfactual(obs=obs, color=new_col)
-    img_cf = np.transpose(img_cf, (2, 0, 1))
+    img_cf, _, _ = generate_colored_counterfactual(obs=obs, do_c=new_col)
     
     return img_cf

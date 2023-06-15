@@ -275,7 +275,7 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
     ## Test pretrained model ## 
     if "COLORED" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/colored_mnist/01/classifier_{}.pt".format(model_path), map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/colored_mnist/00/classifier_{}.pt".format(model_path), map_location=device))
     elif "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
@@ -520,7 +520,7 @@ def test_colored_mnist():
     num_classes = 10
     attributes = ['color']
     subgroup_names = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'blue', 'purple', 'pink', 'magenta']
-    save_dir = 'plots/metrics_comp/colored_mnist/01'
+    save_dir = 'plots/metrics_comp/colored_mnist/00'
     model_suffix = "_COLORED_MNIST"
     test_mnist(models, test_dataset, in_channels, num_classes, attributes, subgroup_names, model_suffix, save_dir)
 

@@ -30,7 +30,7 @@ class ChestXRay(datasets.VisionDataset):
     super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
     
     csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
-    self.data = pd.read_csv(csv_file).head(1000)
+    self.data = pd.read_csv(csv_file)
 
     self.transform = transform
     self.labels = [

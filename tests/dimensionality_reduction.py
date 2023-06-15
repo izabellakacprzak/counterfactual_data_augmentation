@@ -65,7 +65,6 @@ def _get_embeddings_mnist(model, data_loader, img_dim):
         labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
         thickness = np.concatenate((thickness, metrics['thickness'].tolist()))
-        augmented = np.concatenate((augmented, metrics['augmented'].tolist()))
 
     return embeddings, thickness, labels
 
@@ -87,8 +86,9 @@ def _get_embeddings_colored_mnist(model, data_loader, img_dim):
         labels = np.concatenate((labels, target.cpu().numpy().ravel()))
         embeddings = np.concatenate([embeddings, output],axis=0)
         color = np.concatenate((color, metrics['color'].tolist()))
+        augmented = np.concatenate((augmented, metrics['bias_aligned'].tolist()))
 
-    return embeddings, color, labels
+    return embeddings, color, labels, augmented
 
 def _plot_tsne(df_subset, attribute, file_name):
     plt.figure(figsize=(16,10))
@@ -114,12 +114,13 @@ def visualise_t_sne(test_loader, model, img_dim, file_name, dataset='mnist'):
             thickness_post.append('thin' if t <=1.5 else 'thick')
         df['thickness'] = thickness_post
     elif dataset=='coloredmnist':
-        embeddings, color, labels = _get_embeddings_colored_mnist(model, test_loader, img_dim)
+        embeddings, color, labels, augmented = _get_embeddings_colored_mnist(model, test_loader, img_dim)
         feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
         df = pd.DataFrame(embeddings, columns=feat_cols)
         df['y'] = labels
         color = color.astype(float)
         df['color'] = color
+        df['augmented'] = augmented.astype(int)
     else:
         embeddings, race, sex, age, labels, augmented = _get_embeddings_chestxray(model, test_loader, img_dim)
         feat_cols = ['pixel'+str(i) for i in range(embeddings.shape[1])]
@@ -160,6 +161,7 @@ def visualise_t_sne(test_loader, model, img_dim, file_name, dataset='mnist'):
         _plot_tsne(df_subset, "thickness", file_name)
     elif dataset=='coloredmnist':
         _plot_tsne(df_subset, "color", file_name)
+        _plot_tsne(df_subset, "augmented", file_name)
     else:
         _plot_tsne(df_subset, "race", file_name)
         _plot_tsne(df_subset, "sex", file_name)
@@ -175,7 +177,7 @@ def visualise_embeddings(model_path, dataset, in_channels, out_channels, img_dim
         visualise_t_sne(test_loader, model, img_dim, "{}/{}t_sne".format(save_dir, model_path), "mnist")
     elif "COLORED" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
-        model.load_state_dict(torch.load("../checkpoints/colored_mnist/01/classifier_{}.pt".format(model_path), map_location=device))
+        model.load_state_dict(torch.load("../checkpoints/colored_mnist/00/classifier_{}.pt".format(model_path), map_location=device))
         test_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
         visualise_t_sne(test_loader, model, img_dim, "{}/{}t_sne".format(save_dir, model_path), "coloredmnist")
     else:
@@ -196,11 +198,11 @@ def visualise_perturbed_mnist():
         visualise_embeddings(mnist_model_path, test_dataset, 1, 10, 784, save_dir)
 
 def visualise_colored_mnist():
-    models = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS"]
-    save_dir = "plots/tsne/colored_mnist/01"
+    models = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "GROUP_DRO", "COUNTERFACTUALS", "CFREGULARISATION"]
+    save_dir = "plots/tsne/colored_mnist/00"
 
     transforms_list = transforms.Compose([transforms.ToTensor()])
-    test_dataset = ColoredMNIST(train=False, transform=transforms_list)
+    test_dataset = ColoredMNIST(train=True, transform=transforms_list, bias_conflicting_percentage=0.01, method=DebiasingMethod.COUNTERFACTUALS)
 
     for model in models:
         mnist_model_path = "{}_COLORED_MNIST".format(model)

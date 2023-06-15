@@ -39,6 +39,7 @@ def _gen_cfs(test_loader, perturbs_per_sample, do_cfs, run_name):
                     elif "COLORED" in run_name:
                         col = random.randint(0,9)
                         img_cf = get_cf_for_colored_mnist(data[i], metrics['color'][i], labels[i], col)
+                        img_cf = np.transpose(img_cf, (2, 0, 1))
                         img_cf = torch.from_numpy(img_cf).float().to(device)
                         perturbed.append(img_cf)
                         originals.append(data[i])

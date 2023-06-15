@@ -29,11 +29,10 @@ def mnist_regularisation(model, x, metrics, labels, logits):
     return LAMBDA * MSE(logits, logits_cf)
 
 def colored_mnist_regularisation(model, x, metrics, labels, logits):
-    from PIL import Image
-    from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
     cfs = []
     for i in range(len(x)):
         x_cf = get_cf_for_colored_mnist(x[i], metrics['color'][i], labels[i], random.randint(0,9))
+        x_cf = np.transpose(x_cf, (2, 0, 1))
         cfs.append(torch.from_numpy(x_cf).unsqueeze(0).float().to(device))
     
     cfs = torch.stack(cfs).squeeze(1)

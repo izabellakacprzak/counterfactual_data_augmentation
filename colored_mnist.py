@@ -54,8 +54,8 @@ def train_colored_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=De
 # and balanced with counterfactual images
 
 bias_conflicting_perc = 0.0
-train_colored_mnist(run_name="BASELINE_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc)
-train_colored_mnist(run_name="GROUP_DRO_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
+# train_colored_mnist(run_name="BASELINE_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc)
+# train_colored_mnist(run_name="GROUP_DRO_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
 train_colored_mnist(run_name="OVERSAMPLING_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.OVERSAMPLING)
 train_colored_mnist(run_name="AUGMENTATIONS_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.AUGMENTATIONS)
 # train_colored_mnist(run_name="MIXUP_COLORED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.MIXUP)
