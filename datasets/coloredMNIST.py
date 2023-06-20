@@ -12,8 +12,8 @@ class ColoredMNIST(datasets.VisionDataset):
 
     prepare_colored_mnist(datasets.mnist.MNIST('files', train=True, download=True), datasets.mnist.MNIST(self.root, train=False, download=True), bias_conflicting_percentage)
     if train:
-      self.data_label_tuples = torch.load(TRAIN_COLORED_DATA+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt")
-      self.metrics = pd.read_csv(TRAIN_COLORED_METRICS+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv", index_col='index').to_dict('records')
+      self.data_label_tuples = torch.load("{}_{}".format(TRAIN_COLORED_DATA, str(bias_conflicting_percentage)).replace(".", "_")+".pt")
+      self.metrics = pd.read_csv("{}_{}".format(TRAIN_COLORED_METRICS, str(bias_conflicting_percentage)).replace(".", "_")+".csv", index_col='index').to_dict('records')
     
     else:
       self.data_label_tuples = torch.load(TEST_COLORED_DATA)
@@ -22,11 +22,11 @@ class ColoredMNIST(datasets.VisionDataset):
     if not method in [DebiasingMethod.NONE, DebiasingMethod.CF_REGULARISATION, DebiasingMethod.MIXUP]:
       self.data_label_tuples, self.metrics = debias_colored_mnist(train_data=self.data_label_tuples, train_metrics=self.metrics, method=method)
 
+    # group counts for group DRO loss calculation
     self.group_counts = {}
-    for m in self.metrics:
-      c = m['color']
-      self.group_counts[c] = (0 if c not in self.group_counts else self.group_counts[c]) + 1
-
+    for ms in self.metrics:
+      col = ms['color']
+      self.group_counts[col] = (0 if col not in self.group_counts else self.group_counts[col]) + 1
 
   def __getitem__(self, index):
     img, target = self.data_label_tuples[index]

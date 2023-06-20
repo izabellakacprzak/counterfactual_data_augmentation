@@ -1,13 +1,17 @@
 import torch 
 
-GPU = "cuda:0"
+GPU = "cuda:1"
 
 LEARNING_RATE = 0.0001
 EPOCHS = 20
 LAMBDA = 0.6
 BATCH_SIZE = 32
 MSE = torch.nn.MSELoss()
-TRAIN_PERTURBED_FILE = "data/train_mnist_perturbed"
+
+TRAIN_PERTURBED_DATA = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/train_perturbed"
+TEST_PERTURBED_DATA = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/test_perturbed.pt"
+TRAIN_PERTURBED_METRICS = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/train_perturbed_mnist_metrics"
+TEST_PERTURBED_METRICS = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/test_perturbed_mnist_metrics.csv"
 
 TRAIN_COLORED_DATA = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/train_mnist_colored"
 TEST_COLORED_DATA = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/colored/test_mnist_colored.pt"
