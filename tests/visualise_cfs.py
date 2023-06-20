@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from torchvision import transforms
 import random
 import numpy as np

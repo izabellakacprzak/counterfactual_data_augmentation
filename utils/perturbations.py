@@ -2,8 +2,6 @@ import numpy as np
 import random
 import os
 import torch
-import csv
-import matplotlib.pyplot as plt
 
 import tqdm
 from utils.params import *
@@ -41,15 +39,14 @@ def add_perturbations(images, targets, digits, perturbations=perturbations):
 
   return np.concatenate((images, perturbed_images)), np.concatenate((targets, perturbed_targets))
 
-# bias: [0, 7, 8] mostly thin, [1, 3, 6, 9] mostly thick, [2, 4, 5] equally spread
 def prepare_perturbed_mnist(train_data, test_data, bias_conflicting_percentage=0.05):
-    train_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_{}".format(bias_conflicting_percentage).replace(".", "_")+".pt"
-    test_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed.pt"
-    metrics_train_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/train_perturbed_mnist_metrics_{}".format(bias_conflicting_percentage).replace(".", "_")+".csv"
-    metrics_test_file_name = "/homes/iek19/Documents/FYP/counterfactual_data_augmentation/data/test_perturbed_mnist_metrics.csv"
+    train_file_name = "{}_{}".format(TRAIN_PERTURBED_DATA, bias_conflicting_percentage).replace(".", "_")+".pt"
+    test_file_name = TEST_PERTURBED_DATA
+    metrics_train_file_name = "{}_{}".format(TRAIN_PERTURBED_METRICS, bias_conflicting_percentage).replace(".", "_")+".csv"
+    metrics_test_file_name = TEST_PERTURBED_METRICS
 
-    if os.path.exists(train_file_name) and os.path.exists(test_file_name):
-        # os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
+    if (os.path.exists(train_file_name) and os.path.exists(test_file_name) and
+        os.path.exists(metrics_train_file_name) and os.path.exists(metrics_test_file_name)):
         print('[Perturbed MNIST prep]\tPerturbed MNIST dataset already exists')
         return
 

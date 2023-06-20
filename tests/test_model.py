@@ -20,10 +20,6 @@ from utils.params import *
 from utils.utils import preprocess_age, preprocess_thickness
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")
-
-# cols = ['coral','grey', 'gold', 'skyblue', 'peru', 'pink']
-# cols = ['#faba6e', '#ef9570', '#d77776', '#b45f7a', '#884f78', '#59416c', '#2a3358']
-
 cols = ['#fab36e', '#fa977d', '#ea8391', '#ca77a2', '#9f72aa', '#6c6ea5', '#376794']
 
 
@@ -218,7 +214,6 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             attr_values = processed
         
         unique_attr_values = sorted(set(attr_values))
-        # unique_counts = {u:0 for u in unique_attr_values}
         tp_unique = {u:0 for u in unique_attr_values}
         tn_unique = {u:0 for u in unique_attr_values}
         fp_unique = {u:0 for u in unique_attr_values}
@@ -257,7 +252,6 @@ def metrics_per_attribute(attributes, metrics_true, y_true, y_pred):
             # save f1 score values
             div = (tp_unique[av] + 0.5 * (fp_unique[av] + fn_unique[av]))
             f1 = 0 if div==0 else tp_unique[av]/div
-            f1 = f1*((tp_unique[av] + tn_unique[av] + fp_unique[av] + fn_unique[av])/len(y_true))
             f1s.append(f1)
 
             # save TPR score values
@@ -278,6 +272,8 @@ def test_pretrained(model_path, dataset, loss_fn, attributes, in_channels, out_c
         model.load_state_dict(torch.load("../checkpoints/colored_mnist/00/classifier_{}.pt".format(model_path), map_location=device))
     elif "MNIST" in model_path:
         model = ConvNet(in_channels=in_channels, out_channels=out_channels)
+        print(in_channels)
+        print(out_channels)
         model.load_state_dict(torch.load("../checkpoints/mnist/classifier_{}.pt".format(model_path), map_location=device))
     else:
         model = DenseNet(in_channels=in_channels, out_channels=out_channels)
@@ -406,8 +402,6 @@ def test_mnist(models, test_dataset, in_channels, num_classes, attributes, subgr
     plot_metric_subgroup(subgroup_names, attr_precs, "Precision", models, save_dir)
     plot_metric_subgroup(subgroup_names, attr_rcs, "Recall", models, save_dir)
     plot_metric_subgroup(subgroup_names, attr_f1s, "F1-score", models, save_dir)
-    # plot_metric_subgroup(subgroup_names, attr_tprs, "TPR", models, save_dir)
-    # plot_metric_subgroup(subgroup_names, attr_disparities, "TPR disparity", models, save_dir)
 
     plot_metric_subgroup(list(range(num_classes)), label_tprs, "TPR", models, save_dir)
     plot_metric_subgroup(list(range(num_classes)), label_disparities, "TPR disparity", models, save_dir)
@@ -418,19 +412,17 @@ def test_mnist(models, test_dataset, in_channels, num_classes, attributes, subgr
     spider_plot(models, cats, spider_values, save_dir)
 
 def test_chestxray():
-    #models = ["resBASELINE"]
-    #models = ["BASELINE", "OVERSAMPLING_age0", "AUGMENTATIONS_age0"]
     models = ["BASELINE", "OVERSAMPLING_race", "AUGMENTATIONS_race", "GROUP_DRO_race", "COUNTERFACTUALS_race", "COUNTERFACTUALS_race_MIXUP", "CFREGULARISATION_race"]
-    # models = ["BASELINE", "OVERSAMPLING_race", "AUGMENTATIONS_race", "GROUP_DRO_race", "COUNTERFACTUALS_race", "COUNTERFACTUALS_race_MIXUP", "CFREGULARISATION_race"]
-    suffix = "_disease_pred"
+    suffix = "_race_pred"
+    
     in_channels = 1
-    num_classes = 2
+    num_classes = 3
     attributes = ['sex', 'age', 'race']
     # attributes = ['sex', 'age']
     loss_fn = torch.nn.CrossEntropyLoss()
     subgroup_names = ['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99', 'White', 'Asian', 'Black']
     # subgroup_names = ['Male', 'Female', '0-19', '20-39', '40-59', '60-79', '80-99']
-    save_dir = 'plots/metrics_comp/chestxray_disease'
+    save_dir = 'plots/metrics_comp/chestxray_race'
     
     accs = []
     f1s = []
@@ -463,7 +455,7 @@ def test_chestxray():
         overall_accs.append(overall_acc)
         overall_f1s.append(overall_metrics['f1-score'])
 
-        _roc_auc_score(y_true, y_score, model)
+        # _roc_auc_score(y_true, y_score, model)
         plot_auc_per_subgroup(y_true, y_score, [0,1], ["No finding", "Pleural Effusion"], save_dir, model)
         # plot_auc_per_subgroup(y_true, y_score, [0,1,2], ["White", "Asian", "Black"], save_dir, model)
 
@@ -502,27 +494,32 @@ def test_chestxray():
 
 def test_perturbed_mnist():
     transforms_list = transforms.Compose([transforms.ToTensor()])
-    test_dataset = PerturbedMNIST(train=False, transform=transforms_list)
+    test_dataset = PerturbedMNIST(train=False, transform=transforms_list, bias_conflicting_percentage=0.01)
+
     models = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "MIXUP", "COUNTERFACTUALS", "CFREGULARISATION"]
+    model_suffix = "_PERTURBED_MNIST"
     in_channels = 1
     num_classes = 10
     attributes = ['thickness', 'intensity']
     subgroup_names = ['thin', 'thick']
     save_dir = 'plots/metrics_comp/mnist'
-    model_suffix = "_PERTURBED_MNIST"
+
     test_mnist(models, test_dataset, in_channels, num_classes, attributes, subgroup_names, model_suffix, save_dir)
 
 def test_colored_mnist():
     transforms_list = transforms.Compose([transforms.ToTensor()])
     test_dataset = ColoredMNIST(train=False, transform=transforms_list)
+
     models = ["BASELINE", "OVERSAMPLING", "AUGMENTATIONS", "GROUP_DRO", "COUNTERFACTUALS", "CFREGULARISATION"]
+    model_suffix = "_COLORED_MNIST"
     in_channels = 3
     num_classes = 10
     attributes = ['color']
     subgroup_names = ['red', 'orange', 'yellow', 'lime', 'green', 'teal', 'blue', 'purple', 'pink', 'magenta']
     save_dir = 'plots/metrics_comp/colored_mnist/00'
-    model_suffix = "_COLORED_MNIST"
+
     test_mnist(models, test_dataset, in_channels, num_classes, attributes, subgroup_names, model_suffix, save_dir)
 
 # test_chestxray()
 test_colored_mnist()
+# test_perturbed_mnist()

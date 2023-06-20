@@ -2,10 +2,10 @@ import torch
 from torchvision import transforms
 import torchvision.transforms as TF
 import torch.nn.functional as F
-import numpy as np
 
 import sys
 sys.path.append("..")
+
 from utils.params import *
 
 device = torch.device(GPU if torch.cuda.is_available() else "cpu")

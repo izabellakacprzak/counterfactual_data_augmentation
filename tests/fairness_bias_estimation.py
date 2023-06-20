@@ -24,26 +24,16 @@ for idx, run_name in enumerate(run_names):
     run_name = "{}_COLORED_MNIST".format(run_name)
     with open('data/colored_mnist/originals{}.txt'.format(run_name), 'r') as fp:
         for item in fp:
-            # items = item.split(', ')
-            # prob = float(items[0][1:])
             item = item.strip()
             prob = float(sigfig.round(item, decimals=4))
-            # prob = round(prob, 5)
-            # prob = precision_round(prob, 5)
             original_probs.append(prob)
     with open('data/colored_mnist/cfs{}.txt'.format(run_name), 'r') as fp:
         for item in fp:
-            # items = item.split(', ')
-            # prob = float(items[0][1:])
             item = item.strip()
             prob = float(sigfig.round(str(item), decimals=4))
-            # prob = round(prob, 5)
-            # prob = precision_round(prob, 5)
             perturbed_probs.append(prob)
 
 
-    print(len(original_probs))
-    print(len(perturbed_probs))
     bias = bias_estimate(original_probs, perturbed_probs)
     print("Bias for {} is: {}".format(titles[idx], bias))
     fig = plt.figure(run_name)

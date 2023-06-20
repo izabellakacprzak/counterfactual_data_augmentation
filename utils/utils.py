@@ -7,7 +7,6 @@ import pandas as pd
 from PIL import Image
 import torch
 import torchvision
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 import torch.nn.functional as F
@@ -65,6 +64,7 @@ def _add_noise(image, noise_type="gauss"):
                 for i in image.shape]
         out[coords] = 0
         return out
+    return image
    
 def apply_debiasing_method(method, img):
     if method == DebiasingMethod.OVERSAMPLING:
@@ -96,9 +96,9 @@ def _batch_generate_cfs(train_data, amount):
     idx = 0
     indices = list(range(len(train_data)))
     while amount > 0:
-        if os.path.exists(CF_CHEST_DATA) and os.path.exists(CF_CHEST_METRICS):
-            cf_data = np.load(CF_CHEST_DATA)
-            cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records')
+        if os.path.exists(COUNTERFACTUALS_CHEST_DATA) and os.path.exists(COUNTERFACTUALS_CHEST_METRICS):
+            cf_data = np.load(COUNTERFACTUALS_CHEST_DATA)
+            cf_metrics = pd.read_csv(COUNTERFACTUALS_CHEST_METRICS, index_col=None).to_dict('records')
         
         a = min(amount, 1000)
 
@@ -112,10 +112,10 @@ def _batch_generate_cfs(train_data, amount):
             cf_metrics += cf_metrics_new
 
         # Save cf files
-        np.save(CF_CHEST_DATA, cf_data)
+        np.save(COUNTERFACTUALS_CHEST_DATA, cf_data)
         keys = cf_metrics[0].keys()
-        mode = 'w' if os.path.exists(CF_CHEST_METRICS) else 'x'
-        with open(CF_CHEST_METRICS, mode, newline='') as output_file:
+        mode = 'w' if os.path.exists(COUNTERFACTUALS_CHEST_METRICS) else 'x'
+        with open(COUNTERFACTUALS_CHEST_METRICS, mode, newline='') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(cf_metrics)
@@ -136,11 +136,11 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
         }
     
     if method == DebiasingMethod.COUNTERFACTUALS:
-        if not os.path.exists(CF_CHEST_DATA) or not os.path.exists(CF_CHEST_METRICS):
+        if not os.path.exists(COUNTERFACTUALS_CHEST_DATA) or not os.path.exists(COUNTERFACTUALS_CHEST_METRICS):
             cf_data, cf_metrics = _batch_generate_cfs(train_data, 20000)
         else:
-            cf_data = np.load(CF_CHEST_DATA)
-            cf_metrics = pd.read_csv(CF_CHEST_METRICS, index_col=None).to_dict('records') 
+            cf_data = np.load(COUNTERFACTUALS_CHEST_DATA)
+            cf_metrics = pd.read_csv(COUNTERFACTUALS_CHEST_METRICS, index_col=None).to_dict('records') 
         count = 0
         for idx, img in enumerate(cf_data):
             metrics = cf_metrics[idx]

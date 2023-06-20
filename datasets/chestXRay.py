@@ -28,7 +28,7 @@ class ChestXRay(datasets.VisionDataset):
     def __init__(self, mode="train", transform=None, target_transform=None, method=DebiasingMethod.NONE):
         super(ChestXRay, self).__init__('files', transform=transform, target_transform=target_transform)
 
-        csv_file = "/homes/iek19/Documents/FYP/mimic_meta/mimic.sample." + mode + ".csv"
+        csv_file = "{}{}.csv".format(MIMIC_METRICS, mode)
         self.data = pd.read_csv(csv_file)
 
         self.transform = transform
@@ -62,7 +62,7 @@ class ChestXRay(datasets.VisionDataset):
         self.group_counts = {}
 
         for idx, _ in enumerate(tqdm(range(len(self.data)), desc='Loading Data')):
-            img_path = os.path.join("/vol/biomedic3/bglocker/mimic-cxr-jpg-224/data/", self.data.loc[idx, 'path_preproc'])
+            img_path = os.path.join(MIMIC_DATA, self.data.loc[idx, 'path_preproc'])
 
             disease = np.zeros(len(self.labels)-1, dtype=int)
             for i in range(1, len(self.labels)):
