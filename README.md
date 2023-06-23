@@ -3,32 +3,32 @@ An evaluation and comparison of a novel method of counterfactual image data augm
 
 ## Datasets
 Dataset wrappers for all setups used in the experiments
-- perturbedMNIST (i.e. Morpho-MNIST) - modified version of the MNIST dataset [1] with additional thickness and intensity attributes.
-- coloredMNIST - modified version of the MNIST dataset with color applied to the foreground of each image.
-- chestXRay - subset of the Mimic CXR dataset of chest x-rays. We filter out all samples other than healthy patients and patients diagnosed with Pleural Effusion.
+- datasets/perturbedMNIST.py (i.e. Morpho-MNIST) - modified version of the MNIST dataset [1] with additional thickness and intensity attributes
+- datasets/coloredMNIST.py - modified version of the MNIST dataset with color applied to the foreground of each image
+- datasets/chestXRay.py - subset of the Mimic CXR dataset of chest x-rays. We filter out all samples other than healthy patients and patients diagnosed with Pleural Effusion
 
 ## Tests
 Contains multiple test and evaluation files
-- dimensionality_reduction - PCA + t-SNE dimensionality reduction and plotting
-- fairness analysis - bias evaluation through fairness analysis 
-- fairness_bias_estimation - helper file for bias calculation from fairness analysis [2]
-- test_model - evaluation pipeline for standard metrics used in machine learning
-- visualise_cfs - helper file for geenrating plots of example images from used datasets
+- tests/dimensionality_reduction.py - PCA + t-SNE dimensionality reduction and plotting
+- tests/fairness_analysis - bias evaluation through fairness analysis 
+- tests/fairness_bias_estimation.py - helper file for bias calculation from fairness analysis [2]
+- tests/test_model.py - evaluation pipeline for standard metrics used in machine learning
+- tests/visualise_cfs.py - helper file for geenrating plots of example images from used datasets
 
 ## Utils
 Helper functions for datasets and introducing bias synthetically as well as evaluation
-- cf_utils - utils for cf generation
-- colors - methods for the generationg of coloredMNIST as introducing synthetic bias
-- evaluate - evaluation functions
-- params - all parameters used for training and data file names
-- perturbations - methods for the generationg of perturbedMNIST as introducing synthetic bias
-- utils - miscellaneous utils used throughout the project
+- utils/cf_utils.py - utils for cf generation
+- utils/colors.py - methods for the generationg of coloredMNIST as introducing synthetic bias
+- utils/evaluate.py - evaluation functions
+- utils/params.py - all parameters used for training and data file names
+- utils/perturbations.py - methods for the generationg of perturbedMNIST as introducing synthetic bias
+- utils/utils.py - miscellaneous utils used throughout the project
 
-## Main files
-- classifier - implementation of ResNet-based and DenseNet-based classifiers with training/validation/testing code
-- chestxray - bias mitigation comparison experiments for Mimic CXR
-- colored_mnist - bias mitigation comparison experiments for coloredMNIST
-- perturbed_mnist - bias mitigation comparison experiments for perturbedMNIST
+## Experiment files
+- classifier.py - implementation of ResNet-based and DenseNet-based classifiers with training/validation/testing code
+- chestxray.py - bias mitigation comparison experiments for Mimic CXR
+- colored_mnist.py - bias mitigation comparison experiments for coloredMNIST
+- perturbed_mnist.py - bias mitigation comparison experiments for perturbedMNIST
 
 ## References
 [1] Yann LeCun and Corinna Cortes. The mnist database of handwritten digits. 2003. URL http://yann.lecun.com/exdb/mnist/ \

@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import os
-from PIL import Image
 import torch
 
 from utils.params import *
@@ -16,7 +15,6 @@ def color_grayscale_arr(arr, col):
   return arr
 
 colors = [(1.0,0.0,0.0), (0.97,0.47,0.0), (0.97,0.91,0.0), (0.56,0.97,0.0), (0.0,1.0,0.0), (0.0,0.97,0.85), (0.0,0.0,1.0), (0.5,0.0,1.0), (1.0,0.0,0.89), (1.0,0.0,0.44)]
-# colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1), (0.6, 0, 1), (0, 0.5, 0.7), (0.5, 0.7, 1), (0.9, 0, 0.5)]
 def prepare_colored_mnist(train_data, test_data, bias_conflicting_percentage=0.05):
     train_file_name = TRAIN_COLORED_DATA+"_"+str(bias_conflicting_percentage).replace(".", "_")+".pt"
     train_metrics_name = TRAIN_COLORED_METRICS+"_"+str(bias_conflicting_percentage).replace(".", "_")+".csv"
