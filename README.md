@@ -1,1 +1,2 @@
 # counterfactual_data_augmentation
+An evaluation and comparison of a novel method of counterfactual image data augmentation as a debiasing technique for predictive models. Several baseline bias mitigation techniques were implemented as part of this project for the comparison. For our experimental setups we use Morpho-MNIST, Colored-MNIST and Mimic CXR and train a ResNet-based and a DenseNet-based classifier.
