@@ -1,9 +1,7 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from matplotlib import pyplot as plt
-import numpy as np
 from datasets.chestXRay import ChestXRay
-from classifier import ConvNet, DenseNet, train_and_evaluate
+from classifier import DenseNet, train_and_evaluate
 from dro_loss import DROLoss
 
 from utils.params import *
@@ -17,7 +15,7 @@ accs_arr = []
 f1s_arr = []
 
 in_channels = 1
-out_channels = 2
+out_channels = 3
 
 transforms_list = transforms.Compose([transforms.Resize((192,192)),])
 
@@ -25,10 +23,6 @@ def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=Fals
     runs_arr.append(run_name)
     print("[ChestXRay train]\t" + run_name)
     train_dataset = ChestXRay(mode="train", transform=transforms_list, method=debiasing_method)
-    # get_attribute_counts_chestxray(train_dataset)
-    # print_classes_size(train_dataset)
-    # count_thick_thin_per_class(train_dataset.datas)
-    # plot_dataset_digits(train_dataset)
     valid_dataset = ChestXRay(mode="val", transform=transforms_list)
     test_dataset = ChestXRay(mode="test", transform=transforms_list)
 
@@ -59,14 +53,14 @@ def train_chestxray(run_name, debiasing_method=DebiasingMethod.NONE, do_dro=Fals
 # biased, balanced with oversampling, balanced with standard data augmentations methods
 # and balanced with counterfactual images
 
-# train_chestxray(run_name="BASELINE_disease_pred_CHESTXRAY")
-# train_chestxray(run_name="OVERSAMPLING_race_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
-# train_chestxray(run_name="AUGMENTATION_raceS_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
-# train_chestxray(run_name="MIXUP_sex_pred_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
-# train_chestxray(run_name="GROUP_DRO_race_disease_pred_CHESTXRAY", do_dro=True)
-train_chestxray(run_name="COUNTERFACTUALS_random_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
-# train_chestxray(run_name="COUNTERFACTUALS_race_MIXUP_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
-# train_chestxray(run_name="CFREGULARISATION_age_disease_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.CF_REGULARISATION)
+train_chestxray(run_name="BASELINE_disease_pred_CHESTXRAY")
+train_chestxray(run_name="OVERSAMPLING_race_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.OVERSAMPLING)
+train_chestxray(run_name="AUGMENTATION_raceS_disease_pred_CHESTXRAY", debiasing_method=DebiasingMethod.AUGMENTATIONS)
+train_chestxray(run_name="MIXUP_sex_pred_CHESTXRAY", debiasing_method=DebiasingMethod.MIXUP)
+train_chestxray(run_name="GROUP_DRO_race_disease_pred_CHESTXRAY", do_dro=True)
+train_chestxray(run_name="COUNTERFACTUALS_random_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+train_chestxray(run_name="COUNTERFACTUALS_race_MIXUP_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.COUNTERFACTUALS)
+train_chestxray(run_name="CFREGULARISATION_age_disease_race_pred_CHESTXRAY", debiasing_method=DebiasingMethod.CF_REGULARISATION)
 ############################################################
 
 for idx in range(len(runs_arr)):

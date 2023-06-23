@@ -1,12 +1,10 @@
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from matplotlib import pyplot as plt
-import numpy as np
 from datasets.coloredMNIST import ColoredMNIST
 from classifier import ConvNet, train_and_evaluate
 
 from utils.params import *
-from utils.evaluate import print_classes_size, pretty_print_evaluation, save_plot_for_metric
+from utils.evaluate import pretty_print_evaluation, save_plot_for_metric
 from utils.utils import DebiasingMethod
 from dro_loss import DROLoss
 
@@ -54,11 +52,11 @@ def train_colored_mnist(run_name, bias_conflicting_perc=1.0, debiasing_method=De
 # and balanced with counterfactual images
 
 bias_conflicting_perc = 0.0
-# train_colored_mnist(run_name="BASELINE_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc)
-# train_colored_mnist(run_name="GROUP_DRO_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
+train_colored_mnist(run_name="BASELINE_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc)
+train_colored_mnist(run_name="GROUP_DRO_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, do_dro=True)
 train_colored_mnist(run_name="OVERSAMPLING_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.OVERSAMPLING)
 train_colored_mnist(run_name="AUGMENTATIONS_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.AUGMENTATIONS)
-# train_colored_mnist(run_name="MIXUP_COLORED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.MIXUP)
+train_colored_mnist(run_name="MIXUP_COLORED_MNIST", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.MIXUP)
 train_colored_mnist(run_name="COUNTERFACTUALS_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.COUNTERFACTUALS)
 train_colored_mnist(run_name="CFREGULARISATION_COLORED_MNIST_0", bias_conflicting_perc=bias_conflicting_perc, debiasing_method=DebiasingMethod.CF_REGULARISATION)
 
@@ -68,5 +66,4 @@ for idx in range(len(runs_arr)):
     print("[Colored MNIST train]\t" + runs_arr[idx])
     save_plot_for_metric("Accuracy", accs_arr[idx], runs_arr[idx])
     save_plot_for_metric("F1", f1s_arr[idx], runs_arr[idx])
-    # plt.show()
     pretty_print_evaluation(pred_arr[idx], true_arr[idx], range(out_channels))

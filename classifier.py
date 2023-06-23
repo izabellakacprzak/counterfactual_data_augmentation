@@ -9,7 +9,6 @@ import torch.optim.lr_scheduler as lr_scheduler
 
 from utils.utils import mixup_data, DebiasingMethod
 from utils.cf_utils import *
-from utils.evaluate import get_confusion_matrix
 from utils.params import *
 from sklearn.metrics import f1_score
 
@@ -42,12 +41,9 @@ def colored_mnist_regularisation(model, x, metrics, labels, logits):
 def chestxray_regularisation(model, x, metrics, labels, logits):
     from dscmchest.generate_counterfactuals import generate_cf
     cfs = []
-    # obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':labels}
     obs = {'x':x, 'sex':metrics['sex'], 'age':metrics['age'], 'race':metrics['race'], 'finding':metrics['finding']}
     
     do_a, do_f, do_r, do_s = None, None, None, None
-    # do_a = random.choice([0,1, 4])
-    # do_r = random.choice([1,2])
     if random.choice([0,1])==0:
         do_a = random.choice([0,1])
         do_f = 1
@@ -154,15 +150,11 @@ def test_classifier(model, test_loader, loss_fn, do_dro=False):
 
             y_true += target.tolist()
             y_pred += pred.cpu().numpy().tolist()
-            # metrics = [metrics[k].tolist() for k in sorted(metrics.keys())]
-            # list(map(lambda x: x.tolist(), list(metrics.values())))
             for k in metrics.keys():
                 attr_true[k] = (attr_true[k] if k in attr_true else []) + metrics[k].tolist()
-            # attr_true = metrics if len(attr_true)==0 else [m+n for m,n in zip(attr_true, metrics)]
     test_loss /= len(test_loader.dataset)
     y_pred = np.asarray(y_pred)
     y_true = np.asarray(y_true)
-    #attr_true = np.asarray(attr_true)
     acc = 100. * correct / len(test_loader.dataset)
     f1 = f1_score(y_true, y_pred, average='macro')
     print('[Test loop]\tF1 score: ' + str(f1))

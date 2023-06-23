@@ -157,12 +157,9 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
     
     count = 0
     for idx in range(len(train_data)):
-        # TODO: change the condition based on what to impact
         img, ms, lab = train_data[idx]
         a = preprocess_age(ms['age'].item())
-        # if ms['race'].item() == 1:
         for _ in range(2):
-            # TODO: make sure these are copied not referenced
             samples['age'].append(ms['age'])
             samples['sex'].append(ms['sex'])
             samples['race'].append(ms['race'])
@@ -171,16 +168,6 @@ def debias_chestxray(train_data, method=DebiasingMethod.OVERSAMPLING):
             samples['x'].append(new_x)
             samples['augmented'].append(1)
             count += 1
-        # elif ms['race'].item() == 2:
-        #     for _ in range(3):
-        #         # TODO: make sure these are copied not referenced
-        #         samples['age'].append(ms['age'])
-        #         samples['sex'].append(ms['sex'])
-        #         samples['race'].append(ms['race'])
-        #         samples['finding'].append(lab)
-        #         new_x = torch.tensor(apply_debiasing_method(method, img.squeeze().numpy())).unsqueeze(0)
-        #         samples['x'].append(new_x)
-        #         samples['augmented'].append(1)
     return samples
 
 def debias_perturbed_mnist(train_data, train_metrics, method=DebiasingMethod.OVERSAMPLING):
@@ -214,7 +201,6 @@ def debias_perturbed_mnist(train_data, train_metrics, method=DebiasingMethod.OVE
 
 def _generate_colored_cfs(train_data, train_metrics):
     from dscm.generate_colored_counterfactuals import generate_colored_counterfactual
-    # cf_data = np.array([], dtype=np.float32).reshape(0, 3, 28, 28)
     cf_data = []
     cf_metrics = []
 
@@ -294,8 +280,7 @@ def preprocess_thickness(thickness):
         return 1
 
 def save_to_csv(file_name, col_names, rows):
-    with open(file_name, 'w') as f:   
-        # using csv.writer method from CSV package
+    with open(file_name, 'w') as f:
         write = csv.writer(f)
         
         write.writerow(col_names)
